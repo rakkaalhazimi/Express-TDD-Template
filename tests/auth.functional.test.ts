@@ -61,7 +61,7 @@ describe('Authentication API', () => {
   
   test('POST Login with wrong username', async () => {
     const res = await request(app)
-      .post('/auth/login')
+      .post('/api/v1/auth/login')
       .send({
         username: invalidUser.username, 
         password: validUser.password
@@ -72,7 +72,7 @@ describe('Authentication API', () => {
   
   test('POST Login with wrong password', async () => {
     const res = await request(app)
-      .post('/auth/login')
+      .post('/api/v1/auth/login')
       .send({
         username: validUser.username, 
         password: invalidUser.password
@@ -83,7 +83,7 @@ describe('Authentication API', () => {
   
   test('POST Login with correct username and password', async () => {
     const res = await request(app)
-      .post('/auth/login')
+      .post('/api/v1/auth/login')
       .send(validUser);
     expect(res.status).toEqual(202);
   });
@@ -91,7 +91,7 @@ describe('Authentication API', () => {
   
   test('POST Register Exists', async () => {
     const res = await request(app)
-      .post('/auth/register')
+      .post('/api/v1/auth/register')
       .send(newUser);
     expect(res.status).not.equal(404);
   });
@@ -99,7 +99,7 @@ describe('Authentication API', () => {
   
   test('POST Register with username that already exists', async () => {
     const res = await request(app)
-      .post('/auth/register')
+      .post('/api/v1/auth/register')
       .send(validUser);
     expect(res.status).equal(409);
   });
@@ -107,7 +107,7 @@ describe('Authentication API', () => {
   
   test('POST Register with unmatched password', async () => {
     const res = await request(app)
-      .post('/auth/register')
+      .post('/api/v1/auth/register')
       .send({
         username: newUser.username, 
         password: newUser.password, 
@@ -119,7 +119,7 @@ describe('Authentication API', () => {
   
   test('POST Register with matched password', async () => {
     const res = await request(app)
-      .post('/auth/register')
+      .post('/api/v1/auth/register')
       .send(newUser);
     expect(res.status).equal(201);
   });

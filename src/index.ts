@@ -20,17 +20,25 @@ export async function createApp(db: Services) {
   app.set("view engine", "ejs");                           // View engine use .ejs extensions
   app.set('views', path.join(import.meta.dirname, 'views'));
   
-  app.get('/', (req, res) => {
-    res.render('home');
-  });
-  
   app.get('/health-check', (req, res) => {
     res.status(200).send({ status: 'healthy' });
   });
   
-  // Routers
-  app.use('/auth', createAuthController(db));
-  app.use('/user', createUserController(db));
+  // Pages Routers
+  app.get('/', (req, res) => {
+    res.render('home');
+  });
+  
+  app.use('/auth/login', (req, res) => {
+    res.render('login');
+  });
+  
+  // API Routers
+  const apiRouter = express.Router();
+  apiRouter.use('/auth', createAuthController(db));
+  apiRouter.use('/user', createUserController(db));
+  
+  app.use('/api/v1', apiRouter);
   
   return app;
 }

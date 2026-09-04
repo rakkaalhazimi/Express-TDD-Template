@@ -12,11 +12,6 @@ export function createAuthController(db: Services) {
   const authService = createAuthService(db);
   
   
-  AuthController.get('/login', (req: Request, res: Response) => {
-    res.render('login');
-  });
-  
-  
   AuthController.post('/login', async (req: Request, res: Response) => {
     try {
       const { username, password } = req.body;
