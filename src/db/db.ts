@@ -1,6 +1,7 @@
 import { EntityManager, EntityRepository, MikroORM, type Options } from '@mikro-orm/core';
 
 import { UserSchema, type IUser } from '@/features/user/entities/User.js';
+import { UserAuthSchema, type IUserAuth } from '@/features/user/entities/UserAuth.js';
 import config from './mikro-orm.config.js';
 import { SqliteDriver } from '@mikro-orm/sqlite';
 
@@ -10,6 +11,7 @@ export interface Services {
   orm: MikroORM;
   em: EntityManager;
   user: EntityRepository<IUser>;
+  userAuth: EntityRepository<IUserAuth>;
 }
 
 let cache: Services;
@@ -29,6 +31,7 @@ export async function initORM(options?: Partial<Options>): Promise<Services> {
     orm,
     em: orm.em,
     user: orm.em.getRepository(UserSchema),
+    userAuth: orm.em.getRepository(UserAuthSchema),
   };
 }
 
