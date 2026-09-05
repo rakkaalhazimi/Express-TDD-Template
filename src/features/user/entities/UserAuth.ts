@@ -15,7 +15,8 @@ export const UserAuthSchema = defineEntity({
     id: p.bigint().primary(),
     user: () => p.manyToOne(UserSchema),
     provider: p.enum(AuthProvider),
-    providerUserId: p.string().unique(),
+    providerUserId: p.string(),
+    displayIdentifier: p.string(),
     
     createdAt: p
       .datetime()
@@ -25,9 +26,10 @@ export const UserAuthSchema = defineEntity({
       .datetime()
       .onCreate(() => new Date())
       .onUpdate(() => new Date()),
-      
-    deletedAt: p.datetime().nullable()
   },
+  uniques: [
+    { properties: ['provider', 'providerUserId'] },
+  ]
 });
 
-export type IUser = InferEntity<typeof UserAuthSchema>;
+export type IUserAuth = InferEntity<typeof UserAuthSchema>;
