@@ -8,13 +8,14 @@ import { SqliteDriver } from '@mikro-orm/sqlite';
 
 import Env from '@/env-loader.js';
 import { UserSchema } from '@/features/user/entities/User.js';
+import { UserAuthSchema } from '@/features/user/entities/UserAuth.js';
 
 
 const isPostgres = process.env.DB_TYPE === 'postgres';
 
 export default defineConfig({
   driver: SqliteDriver,
-  entities: [UserSchema],
+  entities: [UserSchema, UserAuthSchema],
   migrations: {
     path: './dist/db/migrations', // Path to compiled migrations (used at runtime)
     pathTs: './src/db/migrations', // Path to TypeScript source migrations (used by CLI)
