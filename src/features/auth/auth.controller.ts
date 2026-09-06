@@ -20,11 +20,11 @@ export function createAuthController(db: Services) {
     try {
       const { username, password } = req.body;
       const response = await authService.login(username, password);
-      res.status(response.status).send(response);
+      return res.status(response.status).send(response);
 
     } catch (e) {
       const response = await handleError(e, 'Login failed');
-      res.status(response.status).send(response);
+      return res.status(response.status).send(response);
     }
   });
 
@@ -33,11 +33,11 @@ export function createAuthController(db: Services) {
     try {
       const { username, password, confirmPassword } = req.body;
       const response = await authService.register(username, password, confirmPassword);
-      res.status(response.status).send(response);
+      return res.status(response.status).send(response);
 
     } catch (e) {
       const response = await handleError(e, 'Register failed');
-      res.status(response.status).send(response);
+      return res.status(response.status).send(response);
     }
   });
 
@@ -59,18 +59,20 @@ export function createAuthController(db: Services) {
     let payload: TokenPayload | null = null;
     try {
       payload = await authService.authorizeGoogle(req);
+      
     } catch(e) {
       const response = await handleError(e, 'Google Authorization failed');
-      res.status(response.status).send(response);
+      return res.status(response.status).send(response);
     }
     
     // Login / Register with google id
     try {
       const response = await authService.registerByGoogle(payload!.sub, payload!.email!);
-      res.status(response.status).send(response);
+      return res.status(response.status).send(response);
+      
     } catch(e) {
       const response = await handleError(e, 'Login/Register with google failed');
-      res.status(response.status).send(response);
+      return res.status(response.status).send(response);
     }
   });
 
