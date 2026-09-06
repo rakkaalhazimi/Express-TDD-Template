@@ -1,6 +1,6 @@
 import express from 'express';
 import type { Request, Response } from "express";
-import { auth, OAuth2Client, type TokenPayload } from 'google-auth-library';
+import { type TokenPayload } from 'google-auth-library';
 
 import { createAuthService } from './auth.service.js';
 import type { Services } from '@/db/db.js';
@@ -12,8 +12,6 @@ import Env from '@/env-loader.js';
 export function createAuthController(db: Services) {
   const AuthController = express.Router();
   const authService = createAuthService(db);
-
-  const client = new OAuth2Client(Env.GOOGLE_CLIENT_ID);
 
 
   AuthController.post('/login', async (req: Request, res: Response) => {
