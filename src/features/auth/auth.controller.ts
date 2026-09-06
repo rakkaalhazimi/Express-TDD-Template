@@ -1,6 +1,6 @@
 import express from 'express';
 import type { Request, Response } from "express";
-import { OAuth2Client } from 'google-auth-library';
+import { auth, OAuth2Client, type TokenPayload } from 'google-auth-library';
 
 import { createAuthService } from './auth.service.js';
 import type { Services } from '@/db/db.js';
@@ -55,33 +55,21 @@ export function createAuthController(db: Services) {
 
 
   AuthController.get('/google/callback', async (req: Request, res: Response) => {
-    const { code } = req.query;
+    // Authorize request from google
+    let payload: TokenPayload | null = null;
     try {
-      const authResponse = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          client_id: Env.GOOGLE_CLIENT_ID,
-          client_secret: Env.GOOGLE_CLIENT_SECRET,
-          code,
-          redirect_uri: Env.GOOGLE_REDIRECT_URI,
-          grant_type: 'authorization_code',
-        })
-      });
-
-      const { id_token } = await authResponse.json();
-      const ticket = await client.verifyIdToken({
-        idToken: id_token,
-        audience: Env.GOOGLE_CLIENT_ID!
-      });
-      const payload = ticket.getPayload()!;
-      const response = await authService.registerByGoogle(payload.sub, payload.email!);
+      payload = await authService.authorizeGoogle(req);
+    } catch(e) {
+      const response = await handleError(e, 'Google Authorization failed');
       res.status(response.status).send(response);
-
-    } catch (e) {
-      const response = await handleError(e, 'Register by google failed');
+    }
+    
+    // Login / Register with google id
+    try {
+      const response = await authService.registerByGoogle(payload!.sub, payload!.email!);
+      res.status(response.status).send(response);
+    } catch(e) {
+      const response = await handleError(e, 'Login/Register with google failed');
       res.status(response.status).send(response);
     }
   });

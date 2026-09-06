@@ -1,21 +1,26 @@
 import { randomBytes } from 'node:crypto';
 
 import bcrypt from 'bcrypt';
+import type { Request } from 'express';
+import { OAuth2Client } from 'google-auth-library';
 import { StatusCodes } from 'http-status-codes';
 
-import { type Response } from '@/response.js';
 import { type Services } from "@/db/db.js";
+import Env from '@/env-loader.js';
+import { AuthProvider } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';
-import { AuthProvider } from '../user/entities/UserAuth.js';
+import { type Response } from '@/response.js';
 
 
 
-class AuthService {
+export class AuthService {
 
   private userService: UserService;
+  private client: OAuth2Client;
 
   constructor(private db: Services) {
     this.userService = createUserService(db);
+    this.client = new OAuth2Client(Env.GOOGLE_CLIENT_ID);
   };
 
 
@@ -94,20 +99,41 @@ class AuthService {
       }
     }
   }
-  
-  
+
+
   async generateRandomPassword() {
     const password = randomBytes(16).toString('base64url');
     const hashed = await this.hashPassword(password);
     return hashed;
   }
 
-  
-  async loginByGoogle(uniqueId: string) {
-    
+
+  async authorizeGoogle(req: Request) {
+    const { code } = req.query;
+    const authResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        client_id: Env.GOOGLE_CLIENT_ID,
+        client_secret: Env.GOOGLE_CLIENT_SECRET,
+        code,
+        redirect_uri: Env.GOOGLE_REDIRECT_URI,
+        grant_type: 'authorization_code',
+      })
+    });
+
+    const { id_token } = await authResponse.json();
+    const ticket = await this.client.verifyIdToken({
+      idToken: id_token,
+      audience: Env.GOOGLE_CLIENT_ID!
+    });
+    const payload = ticket.getPayload()!;
+    return payload;
   }
-  
-  
+
+
   async registerByGoogle(uniqueId: string, displayIdentifier: string): Promise<Response> {
     const userAuth = await this.db.userAuth.findOne({
       provider: AuthProvider.GOOGLE,
@@ -126,7 +152,7 @@ class AuthService {
     const username = await this.generateUniqueUsername();
     const password = await this.generateRandomPassword();
     const { data: newUser } = await this.userService.createUser({ username, password });
-    
+
     // Create new user auth
     const response = await this.userService.createUserAuth({
       user: newUser,
@@ -134,7 +160,7 @@ class AuthService {
       providerUserId: uniqueId,
       displayIdentifier,
     });
-    
+
     return response;
   }
 
