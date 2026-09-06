@@ -73,6 +73,39 @@ export function createAuthController(db: Services) {
       return res.status(response.status).send(response);
     }
   });
+  
+  
+  AuthController.get('/github', async (req: Request, res: Response) => {
+    const url = new URL('https://github.com/login/oauth/authorize');
+    url.search = new URLSearchParams({
+      client_id: Env.GITHUB_CLIENT_ID!,
+      redirect_uri: Env.GITHUB_REDIRECT_URI!,
+      scope: 'read:user',
+    }).toString();
+    res.redirect(url.toString());
+  });
+
+
+  AuthController.get('/github/callback', async (req: Request, res: Response) => {
+    // Authorize request from github
+    let payload: any = null;
+    try {
+      payload = await authService.authorizeGithub(req);
+    } catch(e) {
+      const response = await handleError(e, 'Github Authorization failed');
+      return res.status(response.status).send(response);
+    }
+
+    // Login / Register with github id
+    try {
+      const response = await authService.registerByGithub(String(payload.id), payload.email || payload.login);
+      return res.status(response.status).send(response);
+
+    } catch(e) {
+      const response = await handleError(e, 'Login/Register with github failed');
+      return res.status(response.status).send(response);
+    }
+  });
 
   return AuthController;
 }

@@ -163,6 +163,72 @@ export class AuthService {
 
     return response;
   }
+  
+  
+  async authorizeGithub(req: Request) {
+    const { code } = req.query;
+    const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        client_id: Env.GITHUB_CLIENT_ID,
+        client_secret: Env.GITHUB_CLIENT_SECRET,
+        code,
+        redirect_uri: Env.GITHUB_REDIRECT_URI,
+      })
+    });
+
+    const tokenJson = await tokenResponse.json();
+    const accessToken = tokenJson.access_token;
+    if (!accessToken) {
+      throw new Error('Failed to obtain GitHub access token');
+    }
+
+    const userResponse = await fetch('https://api.github.com/user', {
+      headers: {
+        'Authorization': `token ${accessToken}`,
+        'Accept': 'application/vnd.github+json',
+        'User-Agent': 'express-js-tdd'
+      }
+    });
+
+    const userJson = await userResponse.json();
+    return userJson;
+  }
+  
+  
+  async registerByGithub(uniqueId: string, displayIdentifier: string): Promise<Response> {
+    const userAuth = await this.db.userAuth.findOne({
+      provider: AuthProvider.GITHUB,
+      providerUserId: uniqueId,
+    });
+
+    if (userAuth) {
+      return {
+        message: 'Login by Github Success',
+        data: userAuth,
+        status: StatusCodes.OK
+      };
+    }
+
+    // Create new user
+    const username = await this.generateUniqueUsername();
+    const password = await this.generateRandomPassword();
+    const { data: newUser } = await this.userService.createUser({ username, password } as any);
+
+    // Create new user auth
+    const response = await this.userService.createUserAuth({
+      user: newUser,
+      provider: AuthProvider.GITHUB,
+      providerUserId: uniqueId,
+      displayIdentifier,
+    });
+
+    return response;
+  }
 
 };
 
