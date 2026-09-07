@@ -3,6 +3,7 @@ import request from 'supertest';
 
 import { initTestORM } from "@/db/db.js";
 import { AuthService, createAuthService } from "@/features/auth/auth.service.js";
+import { AuthProvider } from "@/features/user/entities/UserAuth.js";
 import { createApp } from "@/index.js";
 
 
@@ -69,6 +70,7 @@ describe('Google Auth API - Register', () => {
       displayIdentifier: googleLoginPayload.email,
     });
     expect(newAuthUser?.providerUserId).equal(googleLoginPayload.sub);
+    expect(newAuthUser?.provider).equal(AuthProvider.GOOGLE);
   });
   
   
@@ -79,6 +81,7 @@ describe('Google Auth API - Register', () => {
       .get('/api/v1/auth/google/callback')
       .set('Accept', 'application/json');
     expect(res.body.data.providerUserId).equal(googleLoginPayload.sub);
+    expect(res.body.data.provider).equal(AuthProvider.GOOGLE);
   });
 });
 

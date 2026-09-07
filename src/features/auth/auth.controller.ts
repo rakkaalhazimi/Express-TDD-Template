@@ -132,7 +132,7 @@ export function createAuthController(db: Services) {
     
     // Login / Register with discord id
     try {
-      const response = await authService.registerByGithub(String(payload.id), payload.username);
+      const response = await authService.registerByDiscord(String(payload.id), payload.username);
       return res.status(response.status).send(response);
 
     } catch(e) {

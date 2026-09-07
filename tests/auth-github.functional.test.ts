@@ -3,6 +3,7 @@ import request from 'supertest';
 
 import { initTestORM } from "@/db/db.js";
 import { AuthService, createAuthService } from "@/features/auth/auth.service.js";
+import { AuthProvider } from "@/features/user/entities/UserAuth.js";
 import { createApp } from "@/index.js";
 
 
@@ -62,6 +63,7 @@ describe('Github Auth API - Register', () => {
       displayIdentifier: githubLoginPayload.login,
     });
     expect(newAuthUser?.providerUserId).equal(githubLoginPayload.id);
+    expect(newAuthUser?.provider).equal(AuthProvider.GITHUB);
   });
 
 
@@ -72,6 +74,7 @@ describe('Github Auth API - Register', () => {
       .get('/api/v1/auth/github/callback')
       .set('Accept', 'application/json');
     expect(res.body.data.providerUserId).equal(githubLoginPayload.id);
+    expect(res.body.data.provider).equal(AuthProvider.GITHUB);
   });
 
 });
