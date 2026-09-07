@@ -163,8 +163,8 @@ export class AuthService {
 
     return response;
   }
-  
-  
+
+
   async authorizeGithub(req: Request) {
     const { code } = req.query;
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
@@ -198,8 +198,8 @@ export class AuthService {
     const userJson = await userResponse.json();
     return userJson;
   }
-  
-  
+
+
   async registerByGithub(uniqueId: string, displayIdentifier: string): Promise<Response> {
     const userAuth = await this.db.userAuth.findOne({
       provider: AuthProvider.GITHUB,
@@ -230,7 +230,79 @@ export class AuthService {
     return response;
   }
 
+
+  async authorizeDiscord(req: Request) {
+    const { code } = req.query;
+    
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: String(code),
+      redirect_uri: Env.DISCORD_REDIRECT_URI!,
+    });
+
+    const credential = Buffer
+      .from(`${Env.DISCORD_CLIENT_ID}:${Env.DISCORD_CLIENT_SECRET}`)
+      .toString('base64');
+
+    const tokenResponse = await fetch('https://discord.com/api/oauth2/token', {
+      method: 'POST',
+      headers: {
+        Authorization: `Basic ${credential}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: body
+    });
+
+    const tokenJson = await tokenResponse.json();
+    const accessToken = tokenJson.access_token;
+    if (!accessToken) {
+      throw new Error('Failed to obtain Discord access token');
+    }
+
+    const userResponse = await fetch('https://discord.com/api/users/@me', {
+      headers: { 
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/json',
+      }
+    });
+
+    const userJson = await userResponse.json();
+    return userJson;
+  }
+  
+  
+  async registerByDiscord(uniqueId: string, displayIdentifier: string): Promise<Response> {
+    const userAuth = await this.db.userAuth.findOne({
+      provider: AuthProvider.DISCORD,
+      providerUserId: uniqueId,
+    });
+
+    if (userAuth) {
+      return {
+        message: 'Login by Discord Success',
+        data: userAuth,
+        status: StatusCodes.OK
+      };
+    }
+
+    // Create new user
+    const username = await this.generateUniqueUsername();
+    const password = await this.generateRandomPassword();
+    const { data: newUser } = await this.userService.createUser({ username, password } as any);
+
+    // Create new user auth
+    const response = await this.userService.createUserAuth({
+      user: newUser,
+      provider: AuthProvider.DISCORD,
+      providerUserId: uniqueId,
+      displayIdentifier,
+    });
+
+    return response;
+  }
 };
+
+
 
 
 export function createAuthService(db: Services) {

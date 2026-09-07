@@ -106,6 +106,40 @@ export function createAuthController(db: Services) {
       return res.status(response.status).send(response);
     }
   });
+  
+  
+  AuthController.get('/discord', async (req: Request, res: Response) => {
+    const url = new URL('https://discord.com/oauth2/authorize');
+    url.search = new URLSearchParams({
+      client_id: Env.DISCORD_CLIENT_ID!,
+      redirect_uri: Env.DISCORD_REDIRECT_URI!,
+      response_type: 'code',
+      scope: 'identify',
+    }).toString();
+    res.redirect(url.toString());
+  });
+  
+  
+  AuthController.get('/discord/callback', async (req: Request, res: Response) => {
+    // Authorize request from discord
+    let payload: any = null;
+    try {
+      payload = await authService.authorizeDiscord(req);
+    } catch(e) {
+      const response = await handleError(e, 'Discord Authorization failed');
+      return res.status(response.status).send(response);
+    }
+    
+    // Login / Register with discord id
+    try {
+      const response = await authService.registerByGithub(String(payload.id), payload.username);
+      return res.status(response.status).send(response);
+
+    } catch(e) {
+      const response = await handleError(e, 'Login/Register with github failed');
+      return res.status(response.status).send(response);
+    }
+  });
 
   return AuthController;
 }
