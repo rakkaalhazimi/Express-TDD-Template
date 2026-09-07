@@ -29,7 +29,26 @@ const newUser = {
 const db = await initTestORM();
 const app = await createApp(db);
 
-describe('Authentication API', () => {
+
+describe('Password Auth API - Page', () => {
+  test('POST Login Exists', async () => {
+    const res = await request(app)
+      .post('/auth/login')
+      .send(validUser);
+    expect(res.status).not.equal(404);
+  });
+  
+  
+  test('POST Register Exists', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/register')
+      .send(newUser);
+    expect(res.status).not.equal(404);
+  });
+});
+
+
+describe('Password Auth API - Login/Register', () => {
   
   beforeEach(async () => {
     // Insert valid user to database
@@ -48,14 +67,6 @@ describe('Authentication API', () => {
       truncate: true,
       clearIdentityMap: true,
     });
-  });
-  
-  
-  test('POST Login Exists', async () => {
-    const res = await request(app)
-      .post('/auth/login')
-      .send(validUser);
-    expect(res.status).not.equal(404);
   });
   
   
@@ -86,14 +97,6 @@ describe('Authentication API', () => {
       .post('/api/v1/auth/login')
       .send(validUser);
     expect(res.status).toEqual(202);
-  });
-  
-  
-  test('POST Register Exists', async () => {
-    const res = await request(app)
-      .post('/api/v1/auth/register')
-      .send(newUser);
-    expect(res.status).not.equal(404);
   });
   
   
