@@ -41,6 +41,7 @@
     ]
   },
   "dependencies": {
+    "@azure/msal-node": "^6.0.0",
     "@libsql/client": "^0.17.4",
     "@mikro-orm/core": "^7.1.14",
     "@mikro-orm/migrations": "^7.1.14",

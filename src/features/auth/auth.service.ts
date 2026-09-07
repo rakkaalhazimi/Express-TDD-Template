@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
+import { ConfidentialClientApplication } from '@azure/msal-node';
 import bcrypt from 'bcrypt';
 import type { Request } from 'express';
 import { OAuth2Client } from 'google-auth-library';
@@ -17,11 +18,20 @@ export class AuthService {
 
   private userService: UserService;
   private client: OAuth2Client;
+  private msClient: ConfidentialClientApplication;
 
   constructor(private db: Services) {
     this.userService = createUserService(db);
     this.client = new OAuth2Client(Env.GOOGLE_CLIENT_ID);
-  };
+    this.msClient = new ConfidentialClientApplication({
+      auth: {
+        clientId: Env.MICROSOFT_CLIENT_ID!,
+        authority: `https://login.microsoftonline.com/common/`, // Personal Account
+        clientSecret: Env.MICROSOFT_CLIENT_SECRET!,
+      },
+    });
+  }
+  
 
 
   async hashPassword(password: string) {
@@ -294,6 +304,71 @@ export class AuthService {
     const response = await this.userService.createUserAuth({
       user: newUser,
       provider: AuthProvider.DISCORD,
+      providerUserId: uniqueId,
+      displayIdentifier,
+    });
+
+    return response;
+  }
+  
+  
+  async getMSAuthUrl() {
+    return await this.msClient.getAuthCodeUrl({
+      scopes: ['user.read', 'openid', 'profile', 'email'],
+      redirectUri: Env.MICROSOFT_REDIRECT_URI!,
+    });
+  }
+  
+  
+  async authorizeMicrosoft(req: Request) {
+    const { code } = req.query;
+    
+    const tokenResponse = await this.msClient.acquireTokenByCode({
+      code: String(code),
+      scopes: ['user.read', 'openid', 'profile', 'email'],
+      redirectUri: Env.MICROSOFT_REDIRECT_URI!,
+    });
+
+    const accessToken = tokenResponse.accessToken;
+    if (!accessToken) {
+      throw new Error('Failed to obtain Microsoft access token');
+    }
+
+    const userResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Accept': 'application/json',
+      }
+    });
+
+    const userJson = await userResponse.json();
+    return userJson;
+  }
+
+
+  async registerByMicrosoft(uniqueId: string, displayIdentifier: string): Promise<Response> {
+    const userAuth = await this.db.userAuth.findOne({
+      provider: AuthProvider.MICROSOFT,
+      providerUserId: uniqueId,
+    });
+
+    if (userAuth) {
+      return {
+        message: 'Login by Microsoft Success',
+        data: userAuth,
+        status: StatusCodes.OK
+      };
+    }
+
+    // Create new user
+    const username = await this.generateUniqueUsername();
+    const password = await this.generateRandomPassword();
+    const { data: newUser } = await this.userService.createUser({ username, password } as any);
+
+    // Create new user auth
+    const response = await this.userService.createUserAuth({
+      user: newUser,
+      provider: AuthProvider.MICROSOFT,
       providerUserId: uniqueId,
       displayIdentifier,
     });

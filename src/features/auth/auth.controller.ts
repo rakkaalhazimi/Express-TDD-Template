@@ -140,6 +140,34 @@ export function createAuthController(db: Services) {
       return res.status(response.status).send(response);
     }
   });
+  
+  
+  AuthController.get('/microsoft', async (req: Request, res: Response) => {
+    const url = await authService.getMSAuthUrl();
+    res.redirect(url);
+  });
+  
+  
+  AuthController.get('/microsoft/callback', async (req: Request, res: Response) => {
+    // Authorize request from microsoft
+    let payload: any = null;
+    try {
+      payload = await authService.authorizeMicrosoft(req);
+    } catch(e) {
+      const response = await handleError(e, 'Microsoft Authorization failed');
+      return res.status(response.status).send(response);
+    }
+    
+    // Login / Register with microsoft id
+    try {
+      const response = await authService.registerByMicrosoft(String(payload.oid), payload.userPrincipalName);
+      return res.status(response.status).send(response);
+
+    } catch(e) {
+      const response = await handleError(e, 'Login/Register with microsoft failed');
+      return res.status(response.status).send(response);
+    }
+  });
 
   return AuthController;
 }
