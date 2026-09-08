@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/server.ts -e ts,js,ejs,html",
-    "build": "tsc -p tsconfig.build.json && node scripts/copy-assets.mts",
+    "build": "tsc -p tsconfig.build.json && tsc-alias tsconfig.build.json && node scripts/copy-assets.mts",
     "start": "node dist/server.js",
     "test": "vitest run",
     "mikro-orm:debug": "mikro-orm debug",
@@ -31,6 +31,7 @@
     "globals": "^17.11.0",
     "nodemon": "^3.1.14",
     "supertest": "^7.2.2",
+    "tsc-alias": "^1.9.4",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2",
     "vitest": "^4.1.11"
