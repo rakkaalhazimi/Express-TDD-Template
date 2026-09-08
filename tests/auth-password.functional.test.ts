@@ -4,6 +4,7 @@ import request from 'supertest';
 import { initTestORM } from "@/db/db.js";
 import { UserSeeder } from "@/db/seeders/UserSeeder.js";
 import { createAuthService } from "@/features/auth/auth.service.js";
+import { AuthProvider } from "@/features/user/entities/UserAuth.js";
 import { createApp } from "@/index.js";
 
 
@@ -125,5 +126,7 @@ describe('Password Auth API - Login/Register', () => {
       .post('/api/v1/auth/register')
       .send(newUser);
     expect(res.status).equal(201);
+    expect(res.body.data.providerUserId).equal(newUser.username);
+    expect(res.body.data.provider).equal(AuthProvider.PASSWORD);
   });
 });

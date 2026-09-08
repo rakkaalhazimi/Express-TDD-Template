@@ -8,6 +8,7 @@ import { StatusCodes } from 'http-status-codes';
 
 import { type Services } from "@/db/db.js";
 import Env from '@/env-loader.js';
+import type { IUser } from '@/features/user/entities/User.js';
 import { AuthProvider } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';
 import { type Response } from '@/response.js';
@@ -95,7 +96,16 @@ export class AuthService {
     }
 
     const hashed = await this.hashPassword(password);
-    const response = await this.userService.createUser({ username, password: hashed } as any);
+    const { data: newUser } = await this.userService.createUser({ username, password: hashed } as any);
+    
+    // Create new user auth
+    const response = await this.userService.createUserAuth({
+      user: newUser,
+      provider: AuthProvider.PASSWORD,
+      providerUserId: `${newUser.id}-${newUser.username}`,
+      displayIdentifier: newUser.username,
+    });
+    
     return response;
   }
 

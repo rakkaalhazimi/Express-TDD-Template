@@ -4,6 +4,7 @@ import { UserSchema } from './User.js';
 
 
 export enum AuthProvider {
+  PASSWORD = 'password',
   GOOGLE = 'google',
   GITHUB = 'github',
   DISCORD = 'discord',
