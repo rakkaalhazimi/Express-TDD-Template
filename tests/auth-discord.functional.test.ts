@@ -15,6 +15,7 @@ const discordLoginPayload = {
 
 const db = await initTestORM();
 const app = await createApp(db);
+const authService = createAuthService(db);
 
 describe('Discord Auth API - Page', () => {
 
@@ -68,13 +69,33 @@ describe('Discord Auth API - Register', () => {
 
 
   test('Register existing user by Discord', async () => {
-    const authService = createAuthService(db);
-    await authService.registerByGithub(discordLoginPayload.id, discordLoginPayload.username);
+    await authService.registerByDiscord(discordLoginPayload.id, discordLoginPayload.username);
+    await request(app)
+      .get('/api/v1/auth/discord/callback')
+      .set('Accept', 'application/json');
+
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: discordLoginPayload.id,
+      displayIdentifier: discordLoginPayload.username,
+    });
+    expect(userAuth?.providerUserId).equal(discordLoginPayload.id);
+    expect(userAuth?.provider).equal(AuthProvider.DISCORD);
+  });
+
+
+  test('JWT Token after Register/Login by Discord', async () => {
     const res = await request(app)
       .get('/api/v1/auth/discord/callback')
       .set('Accept', 'application/json');
-    expect(res.body.data.providerUserId).equal(discordLoginPayload.id);
-    expect(res.body.data.provider).equal(AuthProvider.DISCORD);
+
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: discordLoginPayload.id,
+      displayIdentifier: discordLoginPayload.username,
+    });
+
+    const verifyRes = await authService.verifyJWT(res.body.data.accessToken);
+    expect(verifyRes.data.user_id).toBeTruthy();
+    expect(verifyRes.data.user_id == userAuth?.user?.id).toBe(true);
   });
 
 });

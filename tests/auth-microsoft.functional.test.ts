@@ -15,6 +15,7 @@ const microsoftLoginPayload = {
 
 const db = await initTestORM();
 const app = await createApp(db);
+const authService = createAuthService(db);
 
 describe('Microsoft Auth API - Page', () => {
 
@@ -68,13 +69,33 @@ describe('Microsoft Auth API - Register', () => {
 
 
   test('Register existing user by Microsoft', async () => {
-    const authService = createAuthService(db);
     await authService.registerByMicrosoft(microsoftLoginPayload.oid, microsoftLoginPayload.userPrincipalName);
+    await request(app)
+      .get('/api/v1/auth/microsoft/callback')
+      .set('Accept', 'application/json');
+
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: microsoftLoginPayload.oid,
+      displayIdentifier: microsoftLoginPayload.userPrincipalName,
+    });
+    expect(userAuth?.providerUserId).equal(microsoftLoginPayload.oid);
+    expect(userAuth?.provider).equal(AuthProvider.MICROSOFT);
+  });
+
+
+  test('JWT Token after Register/Login by Microsoft', async () => {
     const res = await request(app)
       .get('/api/v1/auth/microsoft/callback')
       .set('Accept', 'application/json');
-    expect(res.body.data.providerUserId).equal(microsoftLoginPayload.oid);
-    expect(res.body.data.provider).equal(AuthProvider.MICROSOFT);
+
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: microsoftLoginPayload.oid,
+      displayIdentifier: microsoftLoginPayload.userPrincipalName,
+    });
+
+    const verifyRes = await authService.verifyJWT(res.body.data.accessToken);
+    expect(verifyRes.data.user_id).toBeTruthy();
+    expect(verifyRes.data.user_id == userAuth?.user?.id).toBe(true);
   });
 
 });

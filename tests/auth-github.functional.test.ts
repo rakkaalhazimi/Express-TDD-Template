@@ -15,6 +15,8 @@ const githubLoginPayload = {
 
 const db = await initTestORM();
 const app = await createApp(db);
+const authService = createAuthService(db);
+
 
 describe('Github Auth API - Page', () => {
 
@@ -68,13 +70,33 @@ describe('Github Auth API - Register', () => {
 
 
   test('Register existing user by Github', async () => {
-    const authService = createAuthService(db);
     await authService.registerByGithub(githubLoginPayload.id, githubLoginPayload.login);
+    await request(app)
+      .get('/api/v1/auth/github/callback')
+      .set('Accept', 'application/json');
+      
+    const userAuth = await db.userAuth.findOne({ 
+      providerUserId: githubLoginPayload.id,
+      displayIdentifier: githubLoginPayload.login,
+    });
+    expect(userAuth?.providerUserId).equal(githubLoginPayload.id);
+    expect(userAuth?.provider).equal(AuthProvider.GITHUB);
+  });
+  
+  
+  test('JWT Token after Register/Login by Github', async () => {
     const res = await request(app)
       .get('/api/v1/auth/github/callback')
       .set('Accept', 'application/json');
-    expect(res.body.data.providerUserId).equal(githubLoginPayload.id);
-    expect(res.body.data.provider).equal(AuthProvider.GITHUB);
+      
+    const userAuth = await db.userAuth.findOne({ 
+      providerUserId: githubLoginPayload.id,
+      displayIdentifier: githubLoginPayload.login,
+    });
+    
+    const verifyRes = await authService.verifyJWT(res.body.data.accessToken);
+    expect(verifyRes.data.user_id).toBeTruthy();
+    expect(verifyRes.data.user_id == userAuth?.user?.id).toBe(true);
   });
 
 });

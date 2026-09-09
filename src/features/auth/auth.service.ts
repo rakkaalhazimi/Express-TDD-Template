@@ -5,9 +5,11 @@ import bcrypt from 'bcrypt';
 import type { Request } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import { StatusCodes } from 'http-status-codes';
+import jwt from 'jsonwebtoken';
 
 import { type Services } from "@/db/db.js";
 import Env from '@/env-loader.js';
+import { handleError } from '@/error.js';
 import type { IUser } from '@/features/user/entities/User.js';
 import { AuthProvider } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';
@@ -65,7 +67,7 @@ export class AuthService {
         status: StatusCodes.UNAUTHORIZED
       };
     }
-    return { message: 'Login Success', data: null, status: StatusCodes.ACCEPTED };
+    return { message: 'Login Success', data: user, status: StatusCodes.ACCEPTED };
   }
 
 
@@ -384,6 +386,47 @@ export class AuthService {
     });
 
     return response;
+  }
+  
+  
+  createJWT(user: IUser) {
+    const payload = {user_id: Number(user.id)};
+    const token = jwt.sign(payload, Env.SECRET!, { expiresIn: '5m' });
+    return token;
+  }
+  
+  
+  async verifyJWT(token: string): Promise<Response> {
+    try {
+      const decoded = jwt.verify(token, Env.SECRET!);
+      return {
+        message: 'JWT is valid',
+        data: decoded,
+        status: StatusCodes.OK,
+      }
+    } catch(e) {
+      const response = handleError(e, 'Failed to verify JWT', StatusCodes.UNAUTHORIZED);
+      return response;
+    }
+  }
+  
+  
+  async genereateUserToken(id: number): Promise<Response> {
+    const user = await this.db.user.findOne({ id });
+    if (!user) {
+      return {
+        message: 'User not found',
+        data: null,
+        status: StatusCodes.NOT_FOUND,
+      };
+    }
+    const accessToken = this.createJWT(user);
+
+    return {
+      message: 'Login success',
+      data: { accessToken },
+      status: StatusCodes.OK,
+    };
   }
 };
 

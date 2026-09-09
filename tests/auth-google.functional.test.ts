@@ -22,6 +22,7 @@ const googleLoginPayload = {
 
 const db = await initTestORM();
 const app = await createApp(db);
+const authService = createAuthService(db);
 
 describe('Google Auth API - Page', () => {
   
@@ -75,13 +76,33 @@ describe('Google Auth API - Register', () => {
   
   
   test('Register existing user by Google', async () => {
-    const authService = createAuthService(db);
     await authService.registerByGoogle(googleLoginPayload.sub, googleLoginPayload.email);
+    await request(app)
+      .get('/api/v1/auth/google/callback')
+      .set('Accept', 'application/json');
+
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: googleLoginPayload.sub,
+      displayIdentifier: googleLoginPayload.email,
+    });
+    expect(userAuth?.providerUserId).equal(googleLoginPayload.sub);
+    expect(userAuth?.provider).equal(AuthProvider.GOOGLE);
+  });
+
+
+  test('JWT Token after Register/Login by Google', async () => {
     const res = await request(app)
       .get('/api/v1/auth/google/callback')
       .set('Accept', 'application/json');
-    expect(res.body.data.providerUserId).equal(googleLoginPayload.sub);
-    expect(res.body.data.provider).equal(AuthProvider.GOOGLE);
+
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: googleLoginPayload.sub,
+      displayIdentifier: googleLoginPayload.email,
+    });
+
+    const verifyRes = await authService.verifyJWT(res.body.data.accessToken);
+    expect(verifyRes.data.user_id).toBeTruthy();
+    expect(verifyRes.data.user_id == userAuth?.user?.id).toBe(true);
   });
 });
 
