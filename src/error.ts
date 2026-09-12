@@ -26,6 +26,18 @@ export class AppError extends Error {
 }
 
 
+export function createAppError(error: unknown, message: string): AppError {
+  if (error instanceof AppError) {
+    return error;
+  }
+  const appError = new AppError({
+    status: StatusCodes.INTERNAL_SERVER_ERROR,
+    message: message,
+  });
+  return appError;
+}
+
+
 export async function handleError(
     e: unknown, 
     message: string, 
