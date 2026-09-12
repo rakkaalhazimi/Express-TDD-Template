@@ -8,6 +8,7 @@ import jwt, { type JwtPayload } from 'jsonwebtoken';
 import { type Services } from "@/db/db.js";
 import Env from '@/env-loader.js';
 import { AppError } from '@/error.js';
+import type { TokenPayload } from './auth.dto.js';
 import type { IUser } from '@/features/user/entities/User.js';
 import { AuthProvider, type IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';
@@ -344,15 +345,15 @@ export class AuthService {
   
   
   createJWT(user: IUser) {
-    const payload = {user_id: Number(user.id)};
+    const payload: TokenPayload = { user_id: Number(user.id) };
     const token = jwt.sign(payload, Env.SECRET!, { expiresIn: '5m' });
     return token;
   }
   
   
-  async verifyJWT(token: string): Promise<string | JwtPayload> {
+  async verifyJWT(token: string): Promise<TokenPayload> {
     const decoded = jwt.verify(token, Env.SECRET!);
-    return decoded;
+    return decoded as TokenPayload;
   }
   
   

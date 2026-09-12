@@ -93,9 +93,9 @@ describe('Discord Auth API - Register', () => {
       displayIdentifier: discordLoginPayload.username,
     });
 
-    const verifyRes = await authService.verifyJWT(res.body.data.accessToken);
-    expect(verifyRes.data.user_id).toBeTruthy();
-    expect(verifyRes.data.user_id == userAuth?.user?.id).toBe(true);
+    const token = await authService.verifyJWT(res.body.data.accessToken);
+    expect(token.user_id).toBeTruthy();
+    expect(token.user_id == Number(userAuth?.user?.id)).toBe(true);
   });
 
 });
