@@ -1,11 +1,11 @@
 import express from 'express';
 import type { Request, Response } from 'express';
-import { type TokenPayload } from 'google-auth-library';
+import { StatusCodes } from 'http-status-codes';
 
 import { createAuthService } from './auth.service.js';
 import type { Services } from '@/db/db.js';
-import { handleError } from '@/error.js';
 import Env from '@/env-loader.js';
+import { createAppError } from '@/error.js';
 
 
 
@@ -15,22 +15,20 @@ export function createAuthController(db: Services) {
 
 
   AuthController.post('/login', async (req: Request, res: Response) => {
-    let user: any = null;
     try {
-      const { username, password } = req.body;
-      const loginResponse = await authService.login(username, password);
-      user = loginResponse.data;
-    } catch (e) {
-      const response = await handleError(e, 'Login failed');
-      return res.status(response.status).send(response);
-    }
-
-    try {
-      const response = await authService.genereateUserToken(user.id);
-      return res.status(response.status).send(response);
-    } catch (e) {
-      const response = await handleError(e, 'Create JWT Failed');
-      return res.status(response.status).send(response);
+      const user = await authService.login(req.body.username, req.body.password);
+      const accessToken = await authService.genereateUserToken(Number(user.id));
+      return res.status(StatusCodes.OK).json({
+        message: 'Login success',
+        data: { accessToken },
+      });
+      
+    } catch (error) {
+      const appError = createAppError(error, 'Login failed');
+      return res.status(appError.status).json({
+        message: appError.message,
+        data: null,
+      });
     }
   });
   
@@ -38,11 +36,18 @@ export function createAuthController(db: Services) {
   AuthController.post('/register', async (req: Request, res: Response) => {
     try {
       const { username, password, confirmPassword } = req.body;
-      const response = await authService.register(username, password, confirmPassword);
-      return res.status(response.status).send(response);
-    } catch (e) {
-      const response = await handleError(e, 'Register failed');
-      return res.status(response.status).send(response);
+      const userAuth = await authService.register(username, password, confirmPassword);
+      return res.status(StatusCodes.CREATED).send({
+        message: 'Register success',
+        data: { username, provider: userAuth.provider },
+      });
+      
+    } catch (error) {
+      const appError = createAppError(error, 'Register failed');
+      return res.status(appError.status).json({
+        message: appError.message,
+        data: null,
+      });
     }
   });
   
@@ -60,29 +65,21 @@ export function createAuthController(db: Services) {
   
 
   AuthController.get('/google/callback', async (req: Request, res: Response) => {
-    let payload: TokenPayload | null = null;
     try {
-      payload = await authService.authorizeGoogle(req);
-    } catch (e) {
-      const response = await handleError(e, 'Google Authorization failed');
-      return res.status(response.status).send(response);
-    }
-
-    let userAuth: any = null;
-    try {
-      const googleResponse = await authService.registerByGoogle(payload!.sub, payload!.email!);
-      userAuth = googleResponse.data;
-    } catch (e) {
-      const response = await handleError(e, 'Login/Register with google failed');
-      return res.status(response.status).send(response);
-    }
-
-    try {
-      const response = await authService.genereateUserToken(userAuth.user?.id);
-      return res.status(response.status).send(response);
-    } catch (e) {
-      const response = await handleError(e, 'Create JWT failed');
-      return res.status(response.status).send(response);
+      const payload = await authService.authorizeGoogle(req);
+      const userAuth = await authService.registerByGoogle(payload.sub, payload.email!);
+      const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
+      return res.status(StatusCodes.OK).send({
+        message: 'Google authentication successful',
+        data: { accessToken }
+      });
+      
+    } catch (error) {
+      const appError = createAppError(error, 'Google authentication failed');
+      return res.status(appError.status).send({
+        message: appError.message,
+        data: null,
+      });
     }
   });
   
@@ -99,29 +96,21 @@ export function createAuthController(db: Services) {
   
 
   AuthController.get('/github/callback', async (req: Request, res: Response) => {
-    let payload: any = null;
     try {
-      payload = await authService.authorizeGithub(req);
-    } catch (e) {
-      const response = await handleError(e, 'Github Authorization failed');
-      return res.status(response.status).send(response);
-    }
+      const payload = await authService.authorizeGithub(req);
+      const userAuth = await authService.registerByGithub(String(payload.id), payload.email || payload.login);
+      const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
+      return res.status(StatusCodes.OK).send({
+        message: 'Github authentication successful',
+        data: { accessToken }
+      });
 
-    let userAuth: any = null;
-    try {
-      const { data } = await authService.registerByGithub(String(payload.id), payload.email || payload.login);
-      userAuth = data;
-    } catch (e) {
-      const response = await handleError(e, 'Login/Register with github failed');
-      return res.status(response.status).send(response);
-    }
-
-    try {
-      const response = await authService.genereateUserToken(userAuth.user?.id);
-      return res.status(response.status).send(response);
-    } catch (e) {
-      const response = await handleError(e, 'Create JWT failed');
-      return res.status(response.status).send(response);
+    } catch (error) {
+      const appError = createAppError(error, 'Github authentication failed');
+      return res.status(appError.status).send({
+        message: appError.message,
+        data: null,
+      });
     }
   });
   
@@ -139,29 +128,21 @@ export function createAuthController(db: Services) {
   
 
   AuthController.get('/discord/callback', async (req: Request, res: Response) => {
-    let payload: any = null;
     try {
-      payload = await authService.authorizeDiscord(req);
-    } catch (e) {
-      const response = await handleError(e, 'Discord Authorization failed');
-      return res.status(response.status).send(response);
-    }
+      const payload = await authService.authorizeDiscord(req);
+      const userAuth = await authService.registerByDiscord(String(payload.id), payload.username);
+      const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
+      return res.status(StatusCodes.OK).send({
+        message: 'Discord authentication successful',
+        data: { accessToken }
+      });
 
-    let userAuth: any = null;
-    try {
-      const discordResponse = await authService.registerByDiscord(String(payload.id), payload.username);
-      userAuth = discordResponse.data;
-    } catch (e) {
-      const response = await handleError(e, 'Login/Register with discord failed');
-      return res.status(response.status).send(response);
-    }
-
-    try {
-      const response = await authService.genereateUserToken(userAuth.user?.id);
-      return res.status(response.status).send(response);
-    } catch (e) {
-      const response = await handleError(e, 'Create JWT failed');
-      return res.status(response.status).send(response);
+    } catch (error) {
+      const appError = createAppError(error, 'Discord authentication failed');
+      return res.status(appError.status).send({
+        message: appError.message,
+        data: null,
+      });
     }
   });
   
@@ -173,29 +154,21 @@ export function createAuthController(db: Services) {
   
 
   AuthController.get('/microsoft/callback', async (req: Request, res: Response) => {
-    let payload: any = null;
     try {
-      payload = await authService.authorizeMicrosoft(req);
-    } catch (e) {
-      const response = await handleError(e, 'Microsoft Authorization failed');
-      return res.status(response.status).send(response);
-    }
+      const payload = await authService.authorizeMicrosoft(req);
+      const userAuth = await authService.registerByMicrosoft(String(payload.oid), payload.userPrincipalName);
+      const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
+      return res.status(StatusCodes.OK).send({
+        message: 'Microsoft authentication successful',
+        data: { accessToken }
+      });
 
-    let userAuth: any = null;
-    try {
-      const microsoftResponse = await authService.registerByMicrosoft(String(payload.oid), payload.userPrincipalName);
-      userAuth = microsoftResponse.data;
-    } catch (e) {
-      const response = await handleError(e, 'Login/Register with microsoft failed');
-      return res.status(response.status).send(response);
-    }
-
-    try {
-      const response = await authService.genereateUserToken(userAuth.user?.id);
-      return res.status(response.status).send(response);
-    } catch (e) {
-      const response = await handleError(e, 'Create JWT failed');
-      return res.status(response.status).send(response);
+    } catch (error) {
+      const appError = createAppError(error, 'Microsoft authentication failed');
+      return res.status(appError.status).send({
+        message: appError.message,
+        data: null,
+      });
     }
   });
 
