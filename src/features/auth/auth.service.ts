@@ -1,19 +1,16 @@
-import { randomBytes } from 'node:crypto';
-
 import { ConfidentialClientApplication } from '@azure/msal-node';
 import bcrypt from 'bcrypt';
 import type { Request } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import { StatusCodes } from 'http-status-codes';
-import jwt from 'jsonwebtoken';
+import jwt, { type JwtPayload } from 'jsonwebtoken';
 
 import { type Services } from "@/db/db.js";
 import Env from '@/env-loader.js';
-import { handleError } from '@/error.js';
+import { AppError } from '@/error.js';
 import type { IUser } from '@/features/user/entities/User.js';
-import { AuthProvider } from '@/features/user/entities/UserAuth.js';
+import { AuthProvider, type IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';
-import { type Response } from '@/response.js';
 
 
 
@@ -36,7 +33,6 @@ export class AuthService {
   }
   
 
-
   async hashPassword(password: string) {
     const hash = await bcrypt.hash(password, 10);
     return hash;
@@ -49,85 +45,67 @@ export class AuthService {
   }
 
 
-  async login(username: string, password: string): Promise<Response> {
+  async login(username: string, password: string): Promise<IUser> {
     const user = await this.db.user.findOne({ username: username });
-    // console.log('User found: ', user);
     if (!user) {
-      return {
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
         message: 'User not found',
-        data: null,
-        status: StatusCodes.NOT_FOUND
-      };
+      });
     }
     const isVerified = await this.verifyPassword(password, user.password);
     if (!isVerified) {
-      return {
+      throw new AppError({
+        status: StatusCodes.UNAUTHORIZED, 
         message: 'Username or password is incorrect',
-        data: null,
-        status: StatusCodes.UNAUTHORIZED
-      };
+      });
     }
-    return { message: 'Login Success', data: user, status: StatusCodes.ACCEPTED };
+    return user;
   }
 
 
-  async register(username: string, password: string, confirmPassword: string): Promise<Response> {
+  async register(username: string, password: string, confirmPassword: string): Promise<IUserAuth> {
     if (!username || !password || !confirmPassword) {
-      return {
-        message: 'Missing required fields',
-        data: null,
-        status: StatusCodes.BAD_REQUEST
-      };
+      const missingPiece = [];
+      if (!username) missingPiece.push('username');
+      if (!password) missingPiece.push('password');
+      if (!confirmPassword) missingPiece.push('confirmPassword');
+      
+      throw new AppError({
+        status: StatusCodes.BAD_REQUEST,
+        message: `Missing required fields`,
+      });
     }
 
     if (password !== confirmPassword) {
-      return {
+      throw new AppError({
+        status: StatusCodes.BAD_REQUEST,
         message: 'Passwords do not match',
-        data: null,
-        status: StatusCodes.BAD_REQUEST
-      };
+      });
     }
 
     const existing = await this.db.user.findOne({ username });
     if (existing) {
-      return {
+      throw new AppError({
+        status: StatusCodes.CONFLICT,
         message: 'Username already exists',
-        data: null,
-        status: StatusCodes.CONFLICT
-      };
+      });
     }
 
     const hashed = await this.hashPassword(password);
-    const { data: newUser } = await this.userService.createUser({ username, password: hashed } as any);
+    const newUser = await this.userService.createUser({ username, password: hashed });
     
     // Create new user auth
-    const response = await this.userService.createUserAuth({
+    const userAuth = await this.userService.createUserAuth({
       user: newUser,
       provider: AuthProvider.PASSWORD,
       providerUserId: `${newUser.id}-${newUser.username}`,
       displayIdentifier: newUser.username,
     });
     
-    return response;
+    return userAuth;
   }
 
-
-  async generateUniqueUsername() {
-    for (; ;) {
-      const username = `username_${randomBytes(8).toString('base64url')}`;
-      const exists = await this.db.user.findOne({ username });
-      if (!exists) {
-        return username;
-      }
-    }
-  }
-
-
-  async generateRandomPassword() {
-    const password = randomBytes(16).toString('base64url');
-    const hashed = await this.hashPassword(password);
-    return hashed;
-  }
 
 
   async authorizeGoogle(req: Request) {
@@ -156,34 +134,28 @@ export class AuthService {
   }
 
 
-  async registerByGoogle(uniqueId: string, displayIdentifier: string): Promise<Response> {
+  async registerByGoogle(uniqueId: string, displayIdentifier: string): Promise<IUserAuth> {
     const userAuth = await this.db.userAuth.findOne({
       provider: AuthProvider.GOOGLE,
       providerUserId: uniqueId,
     });
 
     if (userAuth) {
-      return {
-        message: 'Login by Google Success',
-        data: userAuth,
-        status: StatusCodes.OK
-      };
+      return userAuth;
     }
 
     // Create new user
-    const username = await this.generateUniqueUsername();
-    const password = await this.generateRandomPassword();
-    const { data: newUser } = await this.userService.createUser({ username, password });
+    const newUser = await this.userService.createRandomUser();
 
     // Create new user auth
-    const response = await this.userService.createUserAuth({
+    const newUserAuth = await this.userService.createUserAuth({
       user: newUser,
       provider: AuthProvider.GOOGLE,
       providerUserId: uniqueId,
       displayIdentifier,
     });
 
-    return response;
+    return newUserAuth;
   }
 
 
@@ -222,34 +194,28 @@ export class AuthService {
   }
 
 
-  async registerByGithub(uniqueId: string, displayIdentifier: string): Promise<Response> {
+  async registerByGithub(uniqueId: string, displayIdentifier: string): Promise<IUserAuth> {
     const userAuth = await this.db.userAuth.findOne({
       provider: AuthProvider.GITHUB,
       providerUserId: uniqueId,
     });
 
     if (userAuth) {
-      return {
-        message: 'Login by Github Success',
-        data: userAuth,
-        status: StatusCodes.OK
-      };
+      return userAuth;
     }
 
     // Create new user
-    const username = await this.generateUniqueUsername();
-    const password = await this.generateRandomPassword();
-    const { data: newUser } = await this.userService.createUser({ username, password } as any);
+    const newUser = await this.userService.createRandomUser();
 
     // Create new user auth
-    const response = await this.userService.createUserAuth({
+    const newUserAuth = await this.userService.createUserAuth({
       user: newUser,
       provider: AuthProvider.GITHUB,
       providerUserId: uniqueId,
       displayIdentifier,
     });
 
-    return response;
+    return newUserAuth;
   }
 
 
@@ -293,34 +259,28 @@ export class AuthService {
   }
   
   
-  async registerByDiscord(uniqueId: string, displayIdentifier: string): Promise<Response> {
+  async registerByDiscord(uniqueId: string, displayIdentifier: string): Promise<IUserAuth> {
     const userAuth = await this.db.userAuth.findOne({
       provider: AuthProvider.DISCORD,
       providerUserId: uniqueId,
     });
 
     if (userAuth) {
-      return {
-        message: 'Login by Discord Success',
-        data: userAuth,
-        status: StatusCodes.OK
-      };
+      return userAuth;
     }
 
     // Create new user
-    const username = await this.generateUniqueUsername();
-    const password = await this.generateRandomPassword();
-    const { data: newUser } = await this.userService.createUser({ username, password } as any);
+    const newUser = await this.userService.createRandomUser();
 
     // Create new user auth
-    const response = await this.userService.createUserAuth({
+    const newUserAuth = await this.userService.createUserAuth({
       user: newUser,
       provider: AuthProvider.DISCORD,
       providerUserId: uniqueId,
       displayIdentifier,
     });
 
-    return response;
+    return newUserAuth;
   }
   
   
@@ -358,34 +318,28 @@ export class AuthService {
   }
 
 
-  async registerByMicrosoft(uniqueId: string, displayIdentifier: string): Promise<Response> {
+  async registerByMicrosoft(uniqueId: string, displayIdentifier: string): Promise<IUserAuth> {
     const userAuth = await this.db.userAuth.findOne({
       provider: AuthProvider.MICROSOFT,
       providerUserId: uniqueId,
     });
 
     if (userAuth) {
-      return {
-        message: 'Login by Microsoft Success',
-        data: userAuth,
-        status: StatusCodes.OK
-      };
+      return userAuth;
     }
 
     // Create new user
-    const username = await this.generateUniqueUsername();
-    const password = await this.generateRandomPassword();
-    const { data: newUser } = await this.userService.createUser({ username, password } as any);
+    const newUser = await this.userService.createRandomUser();
 
     // Create new user auth
-    const response = await this.userService.createUserAuth({
+    const newUserAuth = await this.userService.createUserAuth({
       user: newUser,
       provider: AuthProvider.MICROSOFT,
       providerUserId: uniqueId,
       displayIdentifier,
     });
 
-    return response;
+    return newUserAuth;
   }
   
   
@@ -396,37 +350,22 @@ export class AuthService {
   }
   
   
-  async verifyJWT(token: string): Promise<Response> {
-    try {
-      const decoded = jwt.verify(token, Env.SECRET!);
-      return {
-        message: 'JWT is valid',
-        data: decoded,
-        status: StatusCodes.OK,
-      }
-    } catch(e) {
-      const response = handleError(e, 'Failed to verify JWT', StatusCodes.UNAUTHORIZED);
-      return response;
-    }
+  async verifyJWT(token: string): Promise<string | JwtPayload> {
+    const decoded = jwt.verify(token, Env.SECRET!);
+    return decoded;
   }
   
   
-  async genereateUserToken(id: number): Promise<Response> {
+  async genereateUserToken(id: number): Promise<string> {
     const user = await this.db.user.findOne({ id });
     if (!user) {
-      return {
-        message: 'User not found',
-        data: null,
+      throw new AppError({
         status: StatusCodes.NOT_FOUND,
-      };
+        message: 'User not found',
+      });
     }
     const accessToken = this.createJWT(user);
-
-    return {
-      message: 'Login success',
-      data: { accessToken },
-      status: StatusCodes.OK,
-    };
+    return accessToken;
   }
 };
 

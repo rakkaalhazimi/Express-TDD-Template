@@ -1,6 +1,29 @@
+import { randomUUID } from 'node:crypto';
+
 import { StatusCodes } from 'http-status-codes';
 import { type Response } from '@/response.js';
 
+
+
+interface AppErrorOptions {
+  status: number;
+  message: string;
+  cause?: unknown;
+}
+
+export class AppError extends Error {
+  public status: number;
+  public serverMessage: string;
+  public cause?: unknown;
+  public readonly errorId: string;
+
+  constructor(options: AppErrorOptions) {
+    super(options.message);
+    this.status = options.status;
+    this.cause = options.cause;
+    this.errorId = randomUUID();
+  }
+}
 
 
 export async function handleError(
