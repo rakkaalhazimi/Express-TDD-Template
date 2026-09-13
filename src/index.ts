@@ -6,12 +6,15 @@ import { RequestContext } from '@mikro-orm/core';
 import { type Services } from '@/db/db.js';
 import { createAuthController } from '@/features/auth/auth.controller.js';
 import { createUserController } from '@/features/user/user.controller.js';
+import { LoggerMiddleware } from '@/middleware/logger.js';
+
 
 
 export async function createApp(db: Services) {
   const app = express();
   app.use(express.urlencoded({ extended: true }));         // Access form data from user
   app.use(express.json());                                 // Parse json data from response
+  app.use(LoggerMiddleware);
   // Context for Entity manager
   app.use((req: Request, res: Response, next: NextFunction) => {
     RequestContext.create(db.orm.em, next);
