@@ -3,6 +3,8 @@ import { performance } from "node:perf_hooks";
 import type { NextFunction, Request, Response } from 'express';
 import winston from 'winston';
 
+import type { AppError } from "@/error.js";
+
 
 
 function shortId() {
@@ -22,11 +24,11 @@ const levels = {
 };
 
 const colors = {
-  error: 'red',
-  warn: 'yellow',
-  info: 'green',
-  http: 'magenta',
-  debug: 'white',
+  error: 'redBG',
+  warn: 'yellowBG',
+  info: 'greenBG',
+  http: 'magentaBG',
+  debug: 'whiteBG',
 };
 winston.addColors(colors);
 
@@ -34,20 +36,29 @@ winston.addColors(colors);
 const { 
   combine, 
   timestamp, 
-  colorize, 
+  colorize,
   printf, 
   errors 
 } = winston.format;
 
+
+function centerizeLevel(level: string) {
+  const rawLevel = level.replace(/\u001b\[[0-9;]*m/g, '').toLowerCase();
+  const upperLevel = rawLevel.toUpperCase();
+  const centeredLevelText = ` ${upperLevel} `.padEnd(7, ' ');
+  const coloredBlock = colorize().colorize(rawLevel, centeredLevelText);
+  return coloredBlock;
+}
+
+
 const humanReadableFormat = printf(
   ({ level, timestamp, url, requestId, method, message, statusCode, durationMs, stack }) => {
+    
+    const coloredLevel = centerizeLevel(level);
     
     let format = `${level} ${timestamp} [${requestId}] ${method} ${url}`;
     if (statusCode) {
       format += ` ${statusCode}`;
-    }
-    else {
-      format += `    `;
     }
     if (message !== '') {
       format += ` - ${message}`;
@@ -72,6 +83,10 @@ const logger = winston.createLogger({
   levels: levels,
 });
 
+export function logError(req: Request, error: AppError) {
+  req.context.logger?.error(error);
+}
+
 
 export function LoggerMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = performance.now();
@@ -87,6 +102,7 @@ export function LoggerMiddleware(req: Request, res: Response, next: NextFunction
   });
 
   childLogger.info('');
+  req.context.logger = childLogger;
   
   res.on('finish', () => {
     const { statusCode } = res;

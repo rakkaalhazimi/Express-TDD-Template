@@ -6,6 +6,7 @@ import { createAuthService } from './auth.service.js';
 import type { Services } from '@/db/db.js';
 import Env from '@/env-loader.js';
 import { createAppError } from '@/error.js';
+import { logError } from '@/middleware/logger.js';
 
 
 
@@ -25,6 +26,7 @@ export function createAuthController(db: Services) {
       
     } catch (error) {
       const appError = createAppError(error, 'Login failed');
+      logError(req, appError);
       return res.status(appError.status).json({
         message: appError.message,
         data: null,
@@ -44,6 +46,7 @@ export function createAuthController(db: Services) {
       
     } catch (error) {
       const appError = createAppError(error, 'Register failed');
+      req.context.error = appError;
       return res.status(appError.status).json({
         message: appError.message,
         data: null,
