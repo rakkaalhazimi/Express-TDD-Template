@@ -41,7 +41,7 @@ export function createAuthController(db: Services) {
       const userAuth = await authService.register(username, password, confirmPassword);
       return res.status(StatusCodes.CREATED).send({
         message: 'Register success',
-        data: { username, provider: userAuth.provider },
+        data: { providerUserId: userAuth.providerUserId, provider: userAuth.provider },
       });
       
     } catch (error) {

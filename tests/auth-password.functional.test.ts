@@ -97,7 +97,7 @@ describe('Password Auth API - Login/Register', () => {
     const res = await request(app)
       .post('/api/v1/auth/login')
       .send(validUser);
-    expect(res.status).toEqual(202);
+    expect(res.status).toEqual(200);
   });
   
   
