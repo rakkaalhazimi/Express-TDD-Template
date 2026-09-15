@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import { ConfidentialClientApplication } from '@azure/msal-node';
 import bcrypt from 'bcrypt';
 import type { Request } from 'express';
@@ -8,7 +10,7 @@ import jwt, { type JwtPayload } from 'jsonwebtoken';
 import { type Services } from "@/db/db.js";
 import Env from '@/env-loader.js';
 import { AppError } from '@/error.js';
-import type { TokenPayload } from './auth.dto.js';
+import type { OAuthBindState, TokenPayload } from './auth.dto.js';
 import type { IUser } from '@/features/user/entities/User.js';
 import { AuthProvider, type IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';
@@ -367,6 +369,34 @@ export class AuthService {
     }
     const accessToken = this.createJWT(user);
     return accessToken;
+  }
+  
+  
+  async createOAuthState(req: Request): Promise<OAuthBindState> {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+    const decoded = await this.verifyJWT(token!);
+    return {
+      state: randomUUID(),
+      userId: decoded.user_id,
+    };
+  }
+  
+  
+  verifyOAuthState(req: Request, state: string): OAuthBindState {
+    if (!req.session.oauth) {
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
+        message: 'OAuth state is not found',
+      });
+    }
+    if (state !== req.session.oauth.state) {
+      throw new AppError({
+        status: StatusCodes.UNAUTHORIZED,
+        message: 'OAuth state is invalid',
+      });
+    }
+    return req.session.oauth;
   }
 };
 
