@@ -84,7 +84,13 @@ const logger = winston.createLogger({
 });
 
 export function logError(req: Request, error: AppError) {
-  req.context.logger?.error(error);
+  if (error.cause) {
+    req.context.logger?.error(error.message); // log controller message
+    req.context.logger?.error(error.cause);   // then real error
+  }
+  else {
+    req.context.logger?.error(error);
+  }
 }
 
 

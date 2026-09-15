@@ -33,6 +33,7 @@ export function createAppError(error: unknown, message: string): AppError {
   const appError = new AppError({
     status: StatusCodes.INTERNAL_SERVER_ERROR,
     message: message,
+    cause: error,
   });
   return appError;
 }
