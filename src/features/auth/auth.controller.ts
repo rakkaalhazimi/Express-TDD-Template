@@ -54,16 +54,45 @@ export function createAuthController(db: Services) {
     }
   });
   
+  
+  AuthController.post('/password/bind', async (req: Request, res: Response) => {
+    try {
+      const { id, username, password, confirmPassword } = req.body;
+      const userAuth = await authService.bindPasswordAccount(
+        parseInt(id), 
+        username, 
+        password, 
+        confirmPassword,
+      );
+      return res.status(StatusCodes.CREATED).send({
+        message: 'Bind password auth success',
+        data: { username, provider: userAuth.provider },
+      });
+      
+    } catch (error) {
+      const appError = createAppError(error, 'Bind password auth failed');
+      logError(req, appError);
+      return res.status(appError.status).json({
+        message: appError.message,
+        data: null,
+      });
+    }
+  });
+  
 
   AuthController.get('/google', async (req: Request, res: Response) => {
-    const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
-    url.search = new URLSearchParams({
-      client_id: Env.GOOGLE_CLIENT_ID!,
-      redirect_uri: Env.GOOGLE_REDIRECT_URI!,
-      response_type: 'code',
-      scope: 'openid email profile',
-    }).toString();
-    res.redirect(url.toString());
+    try {
+      const oauthUrl = authService.createGoogleOAuthUrl();
+      res.redirect(oauthUrl);
+      
+    } catch(error) {
+      const appError = createAppError(error, 'Google login failed');
+      logError(req, appError);
+      return res.status(appError.status).json({
+        message: appError.message,
+        data: null,
+      });
+    }
   });
   
 
@@ -80,6 +109,49 @@ export function createAuthController(db: Services) {
     } catch (error) {
       const appError = createAppError(error, 'Google authentication failed');
       return res.status(appError.status).send({
+        message: appError.message,
+        data: null,
+      });
+    }
+  });
+  
+  
+  AuthController.get('/google-bind', async (req: Request, res: Response) => {
+    try {
+      req.session.oauth = await authService.createOAuthState(req);
+      const oauthUrl = authService.createGoogleOAuthUrl();
+      res.redirect(oauthUrl);
+    
+    } catch(error) {
+      const appError = createAppError(error, 'Google bind account failed');
+      logError(req, appError);
+      return res.status(appError.status).json({
+        message: appError.message,
+        data: null,
+      });
+    }
+  });
+  
+  
+  AuthController.post('/google/bind', async (req: Request, res: Response) => {
+    try {
+      const { state } = req.query;
+      const payload = await authService.authorizeGoogle(req);
+      const authState = authService.verifyOAuthState(req, state as string);
+      const userAuth = await authService.bindGoogleAccount(authState.userId, payload.sub, payload.email!);
+      
+      return res.status(StatusCodes.CREATED).send({
+        message: 'Bind google auth success',
+        data: { 
+          providerUserId: userAuth.providerUserId, 
+          provider: userAuth.provider 
+        },
+      });
+      
+    } catch (error) {
+      const appError = createAppError(error, 'Bind password auth failed');
+      logError(req, appError);
+      return res.status(appError.status).json({
         message: appError.message,
         data: null,
       });

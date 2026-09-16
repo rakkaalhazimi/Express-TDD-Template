@@ -11,7 +11,7 @@ import { type Services } from "@/db/db.js";
 import Env from '@/env-loader.js';
 import { AppError } from '@/error.js';
 import type { OAuthBindState, TokenPayload } from './auth.dto.js';
-import type { IUser } from '@/features/user/entities/User.js';
+import { UserSchema, type IUser } from '@/features/user/entities/User.js';
 import { AuthProvider, type IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';
 
@@ -102,7 +102,7 @@ export class AuthService {
     const userAuth = await this.userService.createUserAuth({
       user: newUser,
       provider: AuthProvider.PASSWORD,
-      providerUserId: `${newUser.id}-${newUser.username}`,
+      providerUserId: newUser.username,
       displayIdentifier: newUser.username,
     });
     
@@ -110,7 +110,80 @@ export class AuthService {
   }
 
 
+  async bindPasswordAccount(
+    userId: number, 
+    username: string, 
+    password: string, 
+    confirmPassword: string): Promise<IUserAuth> {
+    
+    if (!username || !password || !confirmPassword) {
+      const missingPiece = [];
+      if (!username) missingPiece.push('username');
+      if (!password) missingPiece.push('password');
+      if (!confirmPassword) missingPiece.push('confirmPassword');
+      
+      throw new AppError({
+        status: StatusCodes.BAD_REQUEST,
+        message: `Missing required fields`,
+      });
+    }
 
+    if (password !== confirmPassword) {
+      throw new AppError({
+        status: StatusCodes.BAD_REQUEST,
+        message: 'Passwords do not match',
+      });
+    }
+    
+    const user = await this.db.user.findOne({ id: userId });
+    if (!user) {
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
+        message: 'User not found',
+      });
+    }
+    
+    const userAuth = await this.db.userAuth.findOne({ 
+      providerUserId: username, 
+      provider: AuthProvider.PASSWORD 
+    });
+    if (userAuth) {
+      throw new AppError({
+        status: StatusCodes.CONFLICT,
+        message: 'User auth already exist',
+      });
+    }
+    
+    // Renew username and password
+    const hashed = await this.hashPassword(password);
+    user.username = username;
+    user.password = hashed;
+    await this.db.em.flush();
+    
+    const newUserAuth = await this.userService.createUserAuth({
+      user: user,
+      provider: AuthProvider.PASSWORD,
+      providerUserId: username,
+      displayIdentifier: username,
+    });
+    
+    return newUserAuth;
+  }
+  
+  
+  createGoogleOAuthUrl(state: string = '') {
+    const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+    url.search = new URLSearchParams({
+      client_id: Env.GOOGLE_CLIENT_ID!,
+      redirect_uri: Env.GOOGLE_REDIRECT_URI!,
+      response_type: 'code',
+      scope: 'openid email profile',
+      state,
+    }).toString();
+    return url.toString();
+  }
+  
+  
   async authorizeGoogle(req: Request) {
     const { code } = req.query;
     const authResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -158,6 +231,42 @@ export class AuthService {
       displayIdentifier,
     });
 
+    return newUserAuth;
+  }
+  
+  
+  async bindGoogleAccount(
+    userId: number, 
+    uniqueId: string, 
+    displayIdentifier: string): Promise<IUserAuth> {
+    
+    const user = await this.db.user.findOne({ id: userId });
+    if (!user) {
+      console.log('User id google: ', userId);
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
+        message: 'User not found'
+      });
+    }
+    
+    const userAuth = await this.db.userAuth.findOne({
+      provider: AuthProvider.GOOGLE,
+      providerUserId: uniqueId,
+    });
+    if (userAuth) {
+      throw new AppError({
+        status: StatusCodes.CONFLICT,
+        message: 'User auth already exist',
+      });
+    }
+    
+    const newUserAuth = await this.userService.createUserAuth({
+      user,
+      provider: AuthProvider.GOOGLE,
+      providerUserId: uniqueId,
+      displayIdentifier
+    });
+    
     return newUserAuth;
   }
 

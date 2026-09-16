@@ -37,22 +37,12 @@ export class UserService {
     const newUser = this.db.em.create(UserSchema, user);
     await this.db.em.flush();
     return newUser;
-    // return {
-    //   message: 'User has been created',
-    //   data: newUser,
-    //   status: StatusCodes.CREATED
-    // };
   }
   
   async createUserAuth(userAuth: RequiredEntityData<IUserAuth>): Promise<IUserAuth> {
     const newUserAuth = this.db.em.create(UserAuthSchema, userAuth);
     await this.db.em.flush();
     return newUserAuth
-    // return {
-    //   message: 'User Auth has been created',
-    //   data: newUserAuth,
-    //   status: StatusCodes.CREATED
-    // };
   }
 
 }

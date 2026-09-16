@@ -7,10 +7,17 @@ import { RequestContext } from '@mikro-orm/core';
 
 import { type Services } from '@/db/db.js';
 import { createAuthController } from '@/features/auth/auth.controller.js';
+import type { OAuthBindState } from '@/features/auth/auth.dto.js';
 import { createUserController } from '@/features/user/user.controller.js';
 import { LoggerMiddleware } from '@/middleware/logger.js';
 
 
+
+declare module 'express-session' {
+  interface SessionData {
+    oauth: OAuthBindState;
+  }
+}
 
 export async function createApp(db: Services) {
   const app = express();
