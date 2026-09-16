@@ -15,14 +15,14 @@ const validUser = {
   confirmPassword: 'test',
 };
 
-const validUser2 = {
+const newUser2 = {
   id: 0,
   username: 'test2',
   password: 'test2',
   confirmPassword: 'test2',
 }
 
-const validUserGoogle = {
+const newUserGoogle = {
   id: 0,
   uniqueId: '123456-google',
   displayIdentifier: 'test-express-tdd',
@@ -33,12 +33,12 @@ const googleLoginPayload = {
   email: 'test@example.com',
 };
 
-const validUserAuthGoogle = {
+const newUserAuthGoogle = {
   uniqueId: googleLoginPayload.sub,
   displayIdentifier: googleLoginPayload.email,
 };
 
-const validUserAuth = {
+const newUserAuth = {
   uniqueId: '123456',
   displayIdentifier: 'test-express-tdd',
 };
@@ -73,8 +73,8 @@ describe('Auth API - Account Binding', () => {
     
     // Account with google auth, for password auth test
     const gUserAuth = await authService.registerByGoogle(
-      validUserGoogle.uniqueId, validUserGoogle.displayIdentifier);
-    validUserGoogle.id = Number(gUserAuth.user!.id);
+      newUserGoogle.uniqueId, newUserGoogle.displayIdentifier);
+    newUserGoogle.id = Number(gUserAuth.user!.id);
   });
 
 
@@ -95,14 +95,14 @@ describe('Auth API - Account Binding', () => {
   test('Bind password account', async ({ app, db }) => {
     const res = await request(app)
       .post('/api/v1/auth/password/bind')
-      .send({...validUser2, id: validUserGoogle.id});  // Register with account made from google
+      .send({...newUser2, id: newUserGoogle.id});  // Register with account made from google
     
     const userAuth = await db.userAuth.findOne({
-      providerUserId: validUser2.username,
+      providerUserId: newUser2.username,
       provider: AuthProvider.PASSWORD,
     }, { populate: ['user'] });
     
-    expect(userAuth?.user?.username).toBe(validUser2.username);
+    expect(userAuth?.user?.username).toBe(newUser2.username);
     expect(res.status).equal(201);
   });
   
@@ -123,23 +123,38 @@ describe('Auth API - Account Binding', () => {
   test('Bind google account', async ({ app, db }) => {
     const res = await request(app)
       .post('/api/v1/auth/google/bind')
-      .send({...validUserAuthGoogle, id: validUser.id});
+      .send({...newUserAuthGoogle, id: validUser.id});
     
     const userAuth = await db.userAuth.findOne({
-      providerUserId: validUserAuthGoogle.uniqueId,
+      providerUserId: newUserAuthGoogle.uniqueId,
       provider: AuthProvider.GOOGLE,
     }, { populate: ['user'] });
     
     expect(userAuth?.user?.username).toBe(validUser.username);
-    expect(res.status).not.equal(404);
+    expect(res.status).not.equal(201);
+  });
+  
+  
+  test('Bind google account if exist', async ({ app, db }) => {
+    const res = await request(app)
+      .post('/api/v1/auth/google/bind')
+      .send({...newUserAuthGoogle, id: validUser.id});
+    
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: newUserAuthGoogle.uniqueId,
+      provider: AuthProvider.GOOGLE,
+    }, { populate: ['user'] });
+    
+    expect(userAuth?.user?.username).toBe(validUser.username);
+    expect(res.status).not.equal(201);
   });
   
   
   test('Bind github account', async ({ app, db }) => {
     const res = await request(app)
       .post('/api/v1/auth/github/bind')
-      .send(validUserAuth);
-    const userAuth = await db.userAuth.findOne(validUserAuth);
+      .send(newUserAuth);
+    const userAuth = await db.userAuth.findOne(newUserAuth);
     expect(userAuth?.user?.username).toBe(validUser.username);
     expect(res.status).not.equal(404);
   });
@@ -148,8 +163,8 @@ describe('Auth API - Account Binding', () => {
   test('Bind discord account', async ({ app, db }) => {
     const res = await request(app)
       .post('/api/v1/auth/discord/bind')
-      .send(validUserAuth);
-    const userAuth = await db.userAuth.findOne(validUserAuth);
+      .send(newUserAuth);
+    const userAuth = await db.userAuth.findOne(newUserAuth);
     expect(userAuth?.user?.username).toBe(validUser.username);
     expect(res.status).not.equal(404);
   });
@@ -158,8 +173,8 @@ describe('Auth API - Account Binding', () => {
   test('Bind microsoft account', async ({ app, db }) => {
     const res = await request(app)
       .post('/api/v1/auth/microsoft/bind')
-      .send(validUserAuth);
-    const userAuth = await db.userAuth.findOne(validUserAuth);
+      .send(newUserAuth);
+    const userAuth = await db.userAuth.findOne(newUserAuth);
     expect(userAuth?.user?.username).toBe(validUser.username);
     expect(res.status).not.equal(404);
   });
