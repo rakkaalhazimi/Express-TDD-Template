@@ -28,14 +28,19 @@ const validUserGoogle = {
   displayIdentifier: 'test-express-tdd',
 }
 
-const validUserAuth = {
-  uniqueId: '123456',
-  displayIdentifier: 'test-express-tdd',
-};
-
 const googleLoginPayload = {
   sub: 'google-user-123',
   email: 'test@example.com',
+};
+
+const validUserAuthGoogle = {
+  uniqueId: googleLoginPayload.sub,
+  displayIdentifier: googleLoginPayload.email,
+};
+
+const validUserAuth = {
+  uniqueId: '123456',
+  displayIdentifier: 'test-express-tdd',
 };
 
 const oauthState = {
@@ -56,18 +61,20 @@ describe('Auth API - Account Binding', () => {
   
   
   test.beforeEach(async ({ authService }) => {
-    const user = await authService.register(
+    // Account with password auth, for other auth test
+    const userAuth = await authService.register(
       validUser.username,
       validUser.password,
       validUser.confirmPassword
     );
-    validUser.id = Number(user.id);
-    oauthState.userId = Number(user.id);
+    const userId = Number(userAuth.user!.id);
+    validUser.id = userId;
+    oauthState.userId = userId;
     
-    const gUser = await authService.registerByGoogle(
+    // Account with google auth, for password auth test
+    const gUserAuth = await authService.registerByGoogle(
       validUserGoogle.uniqueId, validUserGoogle.displayIdentifier);
-    validUserGoogle.id = Number(gUser.id);
-    
+    validUserGoogle.id = Number(gUserAuth.user!.id);
   });
 
 
@@ -116,8 +123,13 @@ describe('Auth API - Account Binding', () => {
   test('Bind google account', async ({ app, db }) => {
     const res = await request(app)
       .post('/api/v1/auth/google/bind')
-      .send(validUserAuth);
-    const userAuth = await db.userAuth.findOne(validUserAuth);
+      .send({...validUserAuthGoogle, id: validUser.id});
+    
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: validUserAuthGoogle.uniqueId,
+      provider: AuthProvider.GOOGLE,
+    }, { populate: ['user'] });
+    
     expect(userAuth?.user?.username).toBe(validUser.username);
     expect(res.status).not.equal(404);
   });

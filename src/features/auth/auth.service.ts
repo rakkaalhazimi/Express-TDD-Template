@@ -114,7 +114,8 @@ export class AuthService {
     userId: number, 
     username: string, 
     password: string, 
-    confirmPassword: string): Promise<IUserAuth> {
+    confirmPassword: string
+  ): Promise<IUserAuth> {
     
     if (!username || !password || !confirmPassword) {
       const missingPiece = [];
@@ -238,11 +239,11 @@ export class AuthService {
   async bindGoogleAccount(
     userId: number, 
     uniqueId: string, 
-    displayIdentifier: string): Promise<IUserAuth> {
+    displayIdentifier: string
+  ): Promise<IUserAuth> {
     
     const user = await this.db.user.findOne({ id: userId });
     if (!user) {
-      console.log('User id google: ', userId);
       throw new AppError({
         status: StatusCodes.NOT_FOUND,
         message: 'User not found'
