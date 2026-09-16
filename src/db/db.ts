@@ -44,3 +44,13 @@ export async function initTestORM() {
   await db.orm.schema.create();  // Create database tables
   return db;
 }
+
+export function forkDB(db: Services) {
+  const em = db.em.fork();
+  return {
+    orm: db.orm,
+    em: db.em.fork(),
+    user: em.getRepository(UserSchema),
+    userAuth: em.getRepository(UserAuthSchema),
+  };
+}
