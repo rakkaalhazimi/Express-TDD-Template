@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { ConfidentialClientApplication } from '@azure/msal-node';
 import bcrypt from 'bcrypt';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import { StatusCodes } from 'http-status-codes';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
@@ -172,11 +172,11 @@ export class AuthService {
   }
   
   
-  createGoogleOAuthUrl(state: string = '') {
+  createGoogleOAuthUrl(redirectUri: string, state: string = '') {
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     url.search = new URLSearchParams({
       client_id: Env.GOOGLE_CLIENT_ID!,
-      redirect_uri: Env.GOOGLE_REDIRECT_URI!,
+      redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'openid email profile',
       state,
@@ -185,7 +185,7 @@ export class AuthService {
   }
   
   
-  async authorizeGoogle(req: Request) {
+  async authorizeGoogle(req: Request, redirectUri: string) {
     const { code } = req.query;
     const authResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -196,7 +196,7 @@ export class AuthService {
         client_id: Env.GOOGLE_CLIENT_ID,
         client_secret: Env.GOOGLE_CLIENT_SECRET,
         code,
-        redirect_uri: Env.GOOGLE_REDIRECT_URI,
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       })
     });
@@ -482,10 +482,20 @@ export class AuthService {
   }
   
   
+  getAccessTokenCookie(req: Request) {
+    return req.cookies.access_token;
+  }
+  
+  setAccessTokenCookie(res: Response, token: string) {
+    res.cookie('access_token', token);
+  }
+  
+  
   async createOAuthState(req: Request): Promise<OAuthBindState> {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    const decoded = await this.verifyJWT(token!);
+    // const authHeader = req.headers['authorization'];
+    // const token = authHeader && authHeader.split(' ')[1];
+    const accessToken = this.getAccessTokenCookie(req);
+    const decoded = await this.verifyJWT(accessToken);
     return {
       state: randomUUID(),
       userId: decoded.user_id,

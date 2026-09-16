@@ -3,6 +3,7 @@ import * as path from 'path';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import expressContext from 'express-request-context';  // Enable req.context and res.context
 import expressSession from 'express-session';
+import cookieParser from 'cookie-parser';
 import { RequestContext } from '@mikro-orm/core';
 
 import { type Services } from '@/db/db.js';
@@ -23,6 +24,7 @@ export async function createApp(db: Services) {
   const app = express();
   app.use(express.urlencoded({ extended: true }));         // Access form data from user
   app.use(express.json());                                 // Parse json data from response
+  app.use(cookieParser());                                 // Parse cookies from request header
   app.use(expressSession({
     secret: 'secret',
     resave: false,

@@ -19,6 +19,7 @@ export function createAuthController(db: Services) {
     try {
       const user = await authService.login(req.body.username, req.body.password);
       const accessToken = await authService.genereateUserToken(Number(user.id));
+      authService.setAccessTokenCookie(res, accessToken);
       return res.status(StatusCodes.OK).json({
         message: 'Login success',
         data: { accessToken },
@@ -82,7 +83,7 @@ export function createAuthController(db: Services) {
 
   AuthController.get('/google', async (req: Request, res: Response) => {
     try {
-      const oauthUrl = authService.createGoogleOAuthUrl();
+      const oauthUrl = authService.createGoogleOAuthUrl(Env.GOOGLE_REDIRECT_URI!);
       res.redirect(oauthUrl);
       
     } catch(error) {
@@ -98,7 +99,7 @@ export function createAuthController(db: Services) {
 
   AuthController.get('/google/callback', async (req: Request, res: Response) => {
     try {
-      const payload = await authService.authorizeGoogle(req);
+      const payload = await authService.authorizeGoogle(req, Env.GOOGLE_REDIRECT_URI!);
       const userAuth = await authService.registerByGoogle(payload.sub, payload.email!);
       const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
       return res.status(StatusCodes.OK).send({
@@ -119,7 +120,10 @@ export function createAuthController(db: Services) {
   AuthController.get('/google-bind', async (req: Request, res: Response) => {
     try {
       req.session.oauth = await authService.createOAuthState(req);
-      const oauthUrl = authService.createGoogleOAuthUrl();
+      const oauthUrl = authService.createGoogleOAuthUrl(
+        Env.GOOGLE_BIND_REDIRECT_URI!, 
+        req.session.oauth.state
+      );
       res.redirect(oauthUrl);
     
     } catch(error) {
@@ -133,10 +137,10 @@ export function createAuthController(db: Services) {
   });
   
   
-  AuthController.post('/google/bind', async (req: Request, res: Response) => {
+  AuthController.get('/google/bind', async (req: Request, res: Response) => {
     try {
       const { state } = req.query;
-      const payload = await authService.authorizeGoogle(req);
+      const payload = await authService.authorizeGoogle(req, Env.GOOGLE_BIND_REDIRECT_URI!);
       const authState = authService.verifyOAuthState(req, state as string);
       const userAuth = await authService.bindGoogleAccount(authState.userId, payload.sub, payload.email!);
       
@@ -149,7 +153,7 @@ export function createAuthController(db: Services) {
       });
       
     } catch (error) {
-      const appError = createAppError(error, 'Bind password auth failed');
+      const appError = createAppError(error, 'Bind google auth failed');
       logError(req, appError);
       return res.status(appError.status).json({
         message: appError.message,
