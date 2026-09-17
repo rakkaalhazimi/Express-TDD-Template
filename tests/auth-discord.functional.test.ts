@@ -4,7 +4,7 @@ import request from 'supertest';
 import { test } from "./auth.context.js";
 
 import { AuthService } from "@/features/auth/auth.service.js";
-import { AuthProvider } from "@/features/user/entities/UserAuth.js";
+import { AuthProvider, UserAuthSchema } from "@/features/user/entities/UserAuth.js";
 
 
 
@@ -166,6 +166,76 @@ describe('Discord Auth API - Bind', () => {
   });
 
 });
+
+
+describe('Discord Auth API - Unbind', () => {
+  
+  const validUser = {
+    username: "test",
+    password: "test",
+    confirmPassword: "test"
+  };
+  
+  test.afterEach(async ({ clearDatabaseRow }) => {
+    await clearDatabaseRow();
+  });
+  
+  
+  test('Unbind discord account', async ({ app, db, authService }) => {
+    await authService.register(
+      validUser.username, 
+      validUser.password, 
+      validUser.confirmPassword,
+    );
+    const passwordAuth = await db.userAuth.findOne({
+      providerUserId: validUser.username,
+      provider: AuthProvider.PASSWORD,
+    }, { populate: ['user'] });
+    const userId = Number(passwordAuth?.user!.id);
+    
+    db.em.create(UserAuthSchema, {
+      user: passwordAuth?.user!,
+      provider: AuthProvider.DISCORD,
+      providerUserId: discordLoginPayload.id,
+      displayIdentifier: discordLoginPayload.username,
+    });
+    await db.em.flush();
+    const accessToken = await authService.genereateUserToken(userId);
+    
+    const res = await request(app)
+      .post('/api/v1/auth/discord/unbind')
+      .set('Cookie', `access_token=${accessToken}`);
+    
+    const boundAuth = await db.userAuth.findOne({
+      providerUserId: discordLoginPayload.id,
+      provider: AuthProvider.DISCORD,
+    });
+    expect(boundAuth).toBeNull();
+    expect(res.status).equal(200);
+  });
+  
+  
+  test('Unbind discord account if not bound', async ({ app, db, authService }) => {
+    await authService.register(
+      validUser.username, 
+      validUser.password, 
+      validUser.confirmPassword,
+    );
+    const passwordAuth = await db.userAuth.findOne({
+      providerUserId: validUser.username,
+      provider: AuthProvider.PASSWORD,
+    }, { populate: ['user'] });
+    const userId = Number(passwordAuth?.user!.id);
+    const accessToken = await authService.genereateUserToken(userId);
+    
+    const res = await request(app)
+      .post('/api/v1/auth/discord/unbind')
+      .set('Cookie', `access_token=${accessToken}`);
+    
+    expect(res.status).equal(404);
+  });
+});
+
 
 
 describe('Discord Auth API - Error', () => {

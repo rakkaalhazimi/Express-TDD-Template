@@ -166,7 +166,29 @@ export function createAuthController(db: Services) {
       });
     }
   });
-  
+
+
+  AuthController.post('/google/unbind', async (req: Request, res: Response) => {
+    try {
+      const accessToken = authService.getAccessTokenCookie(req);
+      const decoded = await authService.verifyJWT(accessToken);
+      const userAuth = await authService.unbindGoogleAccount(decoded.user_id);
+
+      return res.status(StatusCodes.OK).json({
+        message: 'Unbind google auth success',
+        data: { providerUserId: userAuth.providerUserId, provider: userAuth.provider },
+      });
+
+    } catch (error) {
+      const appError = createAppError(error, 'Unbind google auth failed');
+      logError(req, appError);
+      return res.status(appError.status).json({
+        message: appError.message,
+        data: null,
+      });
+    }
+  });
+
 
   AuthController.get('/github', async (req: Request, res: Response) => {
     const oauthUrl = authService.createGithubOAuthUrl(Env.GITHUB_REDIRECT_URI!);
@@ -191,6 +213,78 @@ export function createAuthController(db: Services) {
     }
   });
   
+
+  AuthController.get('/github-bind', async (req: Request, res: Response) => {
+    try {
+      req.session.oauth = await authService.createOAuthState(req);
+      const oauthUrl = authService.createGithubOAuthUrl(
+        Env.GITHUB_BIND_REDIRECT_URI!, 
+        req.session.oauth.state
+      );
+      res.redirect(oauthUrl);
+    
+    } catch(error) {
+      const appError = createAppError(error, 'Github bind account failed');
+      logError(req, appError);
+      return res.status(appError.status).json({
+        message: appError.message,
+        data: null,
+      });
+    }
+  });
+  
+  
+  AuthController.get('/github/bind', async (req: Request, res: Response) => {
+    try {
+      const { state } = req.query;
+      const payload = await authService.authorizeGithub(req);
+      const authState = authService.verifyOAuthState(req, state as string);
+      const userAuth = await authService.bindGithubAccount(
+        authState.userId, 
+        String(payload.id), 
+        payload.email || payload.login,
+      );
+      
+      return res.status(StatusCodes.CREATED).send({
+        message: 'Bind github auth success',
+        data: { 
+          providerUserId: userAuth.providerUserId, 
+          provider: userAuth.provider 
+        },
+      });
+      
+    } catch (error) {
+      const appError = createAppError(error, 'Bind github auth failed');
+      logError(req, appError);
+return res.status(appError.status).json({
+        message: appError.message,
+        data: null,
+      });
+    }
+  });
+
+
+  AuthController.post('/github/unbind', async (req: Request, res: Response) => {
+    try {
+      const accessToken = authService.getAccessTokenCookie(req);
+      const decoded = await authService.verifyJWT(accessToken);
+      const userAuth = await authService.unbindGithubAccount(decoded.user_id);
+
+      return res.status(StatusCodes.OK).json({
+        message: 'Unbind github auth success',
+        data: { providerUserId: userAuth.providerUserId, provider: userAuth.provider },
+      });
+
+    } catch (error) {
+      const appError = createAppError(error, 'Unbind github auth failed');
+      logError(req, appError);
+      return res.status(appError.status).json({
+        message: appError.message,
+        data: null,
+      });
+    }
+  });
+
 
   AuthController.get('/discord', async (req: Request, res: Response) => {
     const url = new URL('https://discord.com/oauth2/authorize');
@@ -220,7 +314,29 @@ export function createAuthController(db: Services) {
       });
     }
   });
-  
+
+
+  AuthController.post('/discord/unbind', async (req: Request, res: Response) => {
+    try {
+      const accessToken = authService.getAccessTokenCookie(req);
+      const decoded = await authService.verifyJWT(accessToken);
+      const userAuth = await authService.unbindDiscordAccount(decoded.user_id);
+
+      return res.status(StatusCodes.OK).json({
+        message: 'Unbind discord auth success',
+        data: { providerUserId: userAuth.providerUserId, provider: userAuth.provider },
+      });
+
+    } catch (error) {
+      const appError = createAppError(error, 'Unbind discord auth failed');
+      logError(req, appError);
+      return res.status(appError.status).json({
+        message: appError.message,
+        data: null,
+      });
+    }
+  });
+
 
   AuthController.get('/microsoft', async (req: Request, res: Response) => {
     const url = await authService.getMSAuthUrl();
@@ -239,6 +355,28 @@ export function createAuthController(db: Services) {
     } catch (error) {
       const appError = createAppError(error, 'Microsoft authentication failed');
       return res.status(appError.status).send({
+        message: appError.message,
+        data: null,
+      });
+    }
+  });
+
+  
+  AuthController.post('/microsoft/unbind', async (req: Request, res: Response) => {
+    try {
+      const accessToken = authService.getAccessTokenCookie(req);
+      const decoded = await authService.verifyJWT(accessToken);
+      const userAuth = await authService.unbindMicrosoftAccount(decoded.user_id);
+
+      return res.status(StatusCodes.OK).json({
+        message: 'Unbind microsoft auth success',
+        data: { providerUserId: userAuth.providerUserId, provider: userAuth.provider },
+      });
+
+    } catch (error) {
+      const appError = createAppError(error, 'Unbind microsoft auth failed');
+      logError(req, appError);
+      return res.status(appError.status).json({
         message: appError.message,
         data: null,
       });

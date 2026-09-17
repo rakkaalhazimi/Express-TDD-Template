@@ -2,8 +2,10 @@ import { randomBytes } from 'node:crypto';
 
 import bcrypt from 'bcrypt';
 import type { RequiredEntityData } from '@mikro-orm/core';
+import { StatusCodes } from 'http-status-codes';
 
 import type { Services } from '@/db/db.js';
+import { AppError } from '@/error.js';
 import { UserSchema, type IUser } from './entities/User.js';
 import { UserAuthSchema, type IUserAuth } from './entities/UserAuth.js';
 
@@ -43,6 +45,19 @@ export class UserService {
     const newUserAuth = this.db.em.create(UserAuthSchema, userAuth);
     await this.db.em.flush();
     return newUserAuth
+  }
+
+  async removeUserAuth(id: number): Promise<IUserAuth> {
+    const userAuth = await this.db.userAuth.findOne({ id });
+    if (!userAuth) {
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
+        message: 'User auth is not found',
+      });
+    }
+    await this.db.em.remove(userAuth as any);
+    await this.db.em.flush();
+    return userAuth;
   }
 
 }

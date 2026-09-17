@@ -4,7 +4,7 @@ import request from 'supertest';
 import { test } from "./auth.context.js";
 
 import { AuthService } from "@/features/auth/auth.service.js";
-import { AuthProvider } from "@/features/user/entities/UserAuth.js";
+import { AuthProvider, UserAuthSchema } from "@/features/user/entities/UserAuth.js";
 
 
 
@@ -167,6 +167,76 @@ describe('Microsoft Auth API - Bind', () => {
   });
 
 });
+
+
+describe('Microsoft Auth API - Unbind', () => {
+  
+  const validUser = {
+    username: "test",
+    password: "test",
+    confirmPassword: "test"
+  };
+  
+  test.afterEach(async ({ clearDatabaseRow }) => {
+    await clearDatabaseRow();
+  });
+  
+  
+  test('Unbind microsoft account', async ({ app, db, authService }) => {
+    await authService.register(
+      validUser.username, 
+      validUser.password, 
+      validUser.confirmPassword,
+    );
+    const passwordAuth = await db.userAuth.findOne({
+      providerUserId: validUser.username,
+      provider: AuthProvider.PASSWORD,
+    }, { populate: ['user'] });
+    const userId = Number(passwordAuth?.user!.id);
+    
+    db.em.create(UserAuthSchema, {
+      user: passwordAuth?.user!,
+      provider: AuthProvider.MICROSOFT,
+      providerUserId: microsoftLoginPayload.oid,
+      displayIdentifier: microsoftLoginPayload.userPrincipalName,
+    });
+    await db.em.flush();
+    const accessToken = await authService.genereateUserToken(userId);
+    
+    const res = await request(app)
+      .post('/api/v1/auth/microsoft/unbind')
+      .set('Cookie', `access_token=${accessToken}`);
+    
+    const boundAuth = await db.userAuth.findOne({
+      providerUserId: microsoftLoginPayload.oid,
+      provider: AuthProvider.MICROSOFT,
+    });
+    expect(boundAuth).toBeNull();
+    expect(res.status).equal(200);
+  });
+  
+  
+  test('Unbind microsoft account if not bound', async ({ app, db, authService }) => {
+    await authService.register(
+      validUser.username, 
+      validUser.password, 
+      validUser.confirmPassword,
+    );
+    const passwordAuth = await db.userAuth.findOne({
+      providerUserId: validUser.username,
+      provider: AuthProvider.PASSWORD,
+    }, { populate: ['user'] });
+    const userId = Number(passwordAuth?.user!.id);
+    const accessToken = await authService.genereateUserToken(userId);
+    
+    const res = await request(app)
+      .post('/api/v1/auth/microsoft/unbind')
+      .set('Cookie', `access_token=${accessToken}`);
+    
+    expect(res.status).equal(404);
+  });
+});
+
 
 
 describe('Microsoft Auth API - Error', () => {

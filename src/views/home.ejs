@@ -180,6 +180,9 @@
             <% if (bound) { %>
               <p class="identifier"><%= bound.displayIdentifier %></p>
               <span class="badge"><%= bound.provider %></span>
+              <% if (provider.id !== 'password' && userAuths.length >= 2) { %>
+                <button class="btn" type="button" onclick="unbindProvider('<%= provider.id %>')">Unbind</button>
+              <% } %>
             <% } else { %>
               <% if (provider.id === 'password') { %>
                 <button class="btn" type="button" onclick="document.getElementById('password-bind').classList.add('open')">Bind with password</button>
@@ -193,8 +196,8 @@
                     <button class="btn" type="button" onclick="this.closest('.bind-form').classList.remove('open')">Cancel</button>
                   </div>
                 </div>
-              <% } else if (provider.id === 'google') { %>
-                <a class="btn" href="/api/v1/auth/google-bind">Bind with Google</a>
+              <% } else if (provider.id === 'google' || provider.id === 'github') { %>
+                <a class="btn" href="/api/v1/auth/<%= provider.id %>-bind">Bind with <%= provider.label %></a>
               <% } else { %>
                 <button class="btn" type="button" title="Not implemented yet" onclick="alert('<%= provider.label %> bind is not implemented yet')">Bind with <%= provider.label %></button>
               <% } %>
@@ -285,6 +288,21 @@
           window.location.href = '/';
         } else {
           alert(data.message || 'Binding failed');
+        }
+      }
+
+      async function unbindProvider(providerId) {
+        if (!confirm('Unbind this account?')) return;
+
+        const res = await fetch(`/api/v1/auth/${providerId}/unbind`, {
+          method: 'POST',
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          window.location.href = '/';
+        } else {
+          alert(data.message || 'Unbind failed');
         }
       }
     </script>

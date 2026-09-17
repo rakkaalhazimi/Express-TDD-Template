@@ -170,6 +170,74 @@ describe('Github Auth API - Bind', () => {
 });
 
 
+describe('Github Auth API - Unbind', () => {
+  
+  const validUser = {
+    username: "test",
+    password: "test",
+    confirmPassword: "test"
+  };
+  
+  test.afterEach(async ({ clearDatabaseRow }) => {
+    await clearDatabaseRow();
+  });
+  
+  
+  test('Unbind github account', async ({ app, db, authService }) => {
+    await authService.register(
+      validUser.username, 
+      validUser.password, 
+      validUser.confirmPassword,
+    );
+    const passwordAuth = await db.userAuth.findOne({
+      providerUserId: validUser.username,
+      provider: AuthProvider.PASSWORD,
+    }, { populate: ['user'] });
+    const userId = Number(passwordAuth?.user!.id);
+    
+    await authService.bindGithubAccount(
+      userId, 
+      githubLoginPayload.id, 
+      githubLoginPayload.login,
+    );
+    const accessToken = await authService.genereateUserToken(userId);
+    
+    const res = await request(app)
+      .post('/api/v1/auth/github/unbind')
+      .set('Cookie', `access_token=${accessToken}`);
+    
+    const boundAuth = await db.userAuth.findOne({
+      providerUserId: githubLoginPayload.id,
+      provider: AuthProvider.GITHUB,
+    });
+    expect(boundAuth).toBeNull();
+    expect(res.status).equal(200);
+  });
+  
+  
+  test('Unbind github account if not bound', async ({ app, db, authService }) => {
+    await authService.register(
+      validUser.username, 
+      validUser.password, 
+      validUser.confirmPassword,
+    );
+    const passwordAuth = await db.userAuth.findOne({
+      providerUserId: validUser.username,
+      provider: AuthProvider.PASSWORD,
+    }, { populate: ['user'] });
+    const userId = Number(passwordAuth?.user!.id);
+    const accessToken = await authService.genereateUserToken(userId);
+    
+    const res = await request(app)
+      .post('/api/v1/auth/github/unbind')
+      .set('Cookie', `access_token=${accessToken}`);
+    
+    expect(res.status).equal(404);
+  });
+});
+
+
+
 describe('Github Auth API - Error', () => {
 
   beforeAll(() => {

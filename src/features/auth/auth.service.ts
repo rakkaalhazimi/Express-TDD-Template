@@ -172,6 +172,23 @@ export class AuthService {
   }
   
   
+  async unbindAccount(providerUserId: string, provider: AuthProvider): Promise<IUserAuth> {
+    const userAuth = await this.db.userAuth.findOne({
+      providerUserId,
+      provider,
+    });
+
+    if (!userAuth) {
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
+        message: 'User auth is not found',
+      });
+    }
+
+    return this.userService.removeUserAuth(Number(userAuth.id));
+  }
+  
+  
   createGoogleOAuthUrl(redirectUri: string, state: string = '') {
     const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
     url.search = new URLSearchParams({
@@ -284,6 +301,21 @@ export class AuthService {
   }
 
 
+  async unbindGoogleAccount(userId: number): Promise<IUserAuth> {
+    const boundAuth = await this.db.userAuth.findOne({
+      user: userId,
+      provider: AuthProvider.GOOGLE,
+    });
+    if (!boundAuth) {
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
+        message: 'Google account is not bound',
+      });
+    }
+    return this.unbindAccount(boundAuth.providerUserId, AuthProvider.GOOGLE);
+  }
+
+
   async authorizeGithub(req: Request) {
     const { code } = req.query;
     const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
@@ -341,6 +373,57 @@ export class AuthService {
     });
 
     return newUserAuth;
+  }
+
+
+  async bindGithubAccount(
+    userId: number, 
+    uniqueId: string, 
+    displayIdentifier: string
+  ): Promise<IUserAuth> {
+    
+    const user = await this.db.user.findOne({ id: userId });
+    if (!user) {
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
+        message: 'User not found'
+      });
+    }
+    
+    const userAuth = await this.db.userAuth.findOne({
+      provider: AuthProvider.GITHUB,
+      providerUserId: uniqueId,
+    });
+    if (userAuth) {
+      throw new AppError({
+        status: StatusCodes.CONFLICT,
+        message: 'User auth already exist',
+      });
+    }
+    
+    const newUserAuth = await this.userService.createUserAuth({
+      user,
+      provider: AuthProvider.GITHUB,
+      providerUserId: uniqueId,
+      displayIdentifier
+    });
+    
+    return newUserAuth;
+  }
+
+
+  async unbindGithubAccount(userId: number): Promise<IUserAuth> {
+    const boundAuth = await this.db.userAuth.findOne({
+      user: userId,
+      provider: AuthProvider.GITHUB,
+    });
+    if (!boundAuth) {
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
+        message: 'Github account is not bound',
+      });
+    }
+    return this.unbindAccount(boundAuth.providerUserId, AuthProvider.GITHUB);
   }
 
 
@@ -409,6 +492,21 @@ export class AuthService {
   }
   
   
+  async unbindDiscordAccount(userId: number): Promise<IUserAuth> {
+    const boundAuth = await this.db.userAuth.findOne({
+      user: userId,
+      provider: AuthProvider.DISCORD,
+    });
+    if (!boundAuth) {
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
+        message: 'Discord account is not bound',
+      });
+    }
+    return this.unbindAccount(boundAuth.providerUserId, AuthProvider.DISCORD);
+  }
+  
+  
   async getMSAuthUrl() {
     return await this.msClient.getAuthCodeUrl({
       scopes: ['user.read', 'openid', 'profile', 'email'],
@@ -465,6 +563,21 @@ export class AuthService {
     });
 
     return newUserAuth;
+  }
+  
+  
+  async unbindMicrosoftAccount(userId: number): Promise<IUserAuth> {
+    const boundAuth = await this.db.userAuth.findOne({
+      user: userId,
+      provider: AuthProvider.MICROSOFT,
+    });
+    if (!boundAuth) {
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
+        message: 'Microsoft account is not bound',
+      });
+    }
+    return this.unbindAccount(boundAuth.providerUserId, AuthProvider.MICROSOFT);
   }
   
   
