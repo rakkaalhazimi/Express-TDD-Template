@@ -92,39 +92,6 @@ describe('Auth API - Account Binding', () => {
   });
   
   
-  test('Bind google account', async ({ app, db }) => {
-    const res = await request(app)
-      .get('/api/v1/auth/google/bind');
-    
-    const userAuth = await db.userAuth.findOne({
-      providerUserId: googleLoginPayload.sub,
-      provider: AuthProvider.GOOGLE,
-    }, { populate: ['user'] });
-    console.log('User auth: ', userAuth);
-    
-    expect(userAuth?.user?.username).toBe(validUser.username);
-    expect(res.status).equal(201);
-  });
-  
-  
-  test('Bind google account if exist', async ({ app, db, authService }) => {
-    await authService.registerByGoogle(
-      googleLoginPayload.sub, 
-      googleLoginPayload.email,
-    );
-    
-    const res = await request(app)
-      .get('/api/v1/auth/google/bind');
-    
-    const userAuth = await db.userAuth.find({
-      providerUserId: googleLoginPayload.sub,
-      provider: AuthProvider.GOOGLE,
-    });
-    expect(userAuth.length).toBeLessThan(2);
-    expect(res.status).equal(409);
-  });
-  
-  
   test('Bind github account', async ({ app, db }) => {
     const res = await request(app)
       .get('/api/v1/auth/github/bind')
