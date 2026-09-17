@@ -92,36 +92,6 @@ describe('Auth API - Account Binding', () => {
   });
   
   
-  test('Bind password account', async ({ app, db }) => {
-    const res = await request(app)
-      .post('/api/v1/auth/password/bind')
-      .send({...newUser, id: newUserGoogle.id});  // Register with account made from google
-    
-    const userAuth = await db.userAuth.findOne({
-      providerUserId: newUser.username,
-      provider: AuthProvider.PASSWORD,
-    }, { populate: ['user'] });
-    
-    expect(userAuth?.user?.username).toBe(newUser.username);
-    expect(res.status).equal(201);
-  });
-  
-  
-  test('Bind password account if exist', async ({ app, db }) => {
-    const res = await request(app)
-      .post('/api/v1/auth/password/bind')
-      .send(validUser);
-
-    const foundUserAuth = await db.userAuth.find({
-      providerUserId: validUser.username,
-      provider: AuthProvider.PASSWORD,
-    });
-
-    expect(foundUserAuth.length).toBeLessThan(2);
-    expect(res.status).equal(409);
-  });
-  
-
   test('Bind google account', async ({ app, db }) => {
     const res = await request(app)
       .get('/api/v1/auth/google/bind');

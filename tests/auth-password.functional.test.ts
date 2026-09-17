@@ -124,3 +124,64 @@ describe('Password Auth API - Login/Register', () => {
     expect(res.body.data.provider).equal(AuthProvider.PASSWORD);
   });
 });
+
+
+describe('Password Auth API - Bind', () => {
+  const newUserGoogle = {
+    id: 0,
+    uniqueId: '123456-google',
+    displayIdentifier: 'test-express-tdd',
+  };
+  
+  test.beforeEach(async ({ authService }) => {
+    const gUserAuth = await authService.registerByGoogle(
+      newUserGoogle.uniqueId, newUserGoogle.displayIdentifier);
+    newUserGoogle.id = Number(gUserAuth.user!.id);
+  });
+  
+  
+  test.afterEach(async ({ db }) => {
+    await db.orm.schema.clear({
+      truncate: true,
+      clearIdentityMap: true,
+    });
+  })
+  
+  
+  test('Bind password account', async ({ app, db }) => {
+    const res = await request(app)
+      .post('/api/v1/auth/password/bind')
+      .send({...newUser, id: newUserGoogle.id});  // Register with account made from google
+    
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: newUser.username,
+      provider: AuthProvider.PASSWORD,
+    }, { populate: ['user'] });
+    
+    expect(userAuth?.user?.username).toBe(newUser.username);
+    expect(res.status).equal(201);
+  });
+    
+    
+  test('Bind password account if exist', async ({ app, db, authService }) => {
+    
+    const userAuth = await authService.register(
+      validUser.username,
+      validUser.password,
+      validUser.confirmPassword
+    );
+    const userId = Number(userAuth!.user!.id);
+    
+    const res = await request(app)
+      .post('/api/v1/auth/password/bind')
+      .send({...validUser, id: userId});
+
+    const foundUserAuth = await db.userAuth.find({
+      providerUserId: validUser.username,
+      provider: AuthProvider.PASSWORD,
+    });
+
+    expect(foundUserAuth.length).toBeLessThan(2);
+    expect(res.status).equal(409);
+  });
+});
