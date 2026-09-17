@@ -458,7 +458,7 @@ export class AuthService {
   
   createJWT(user: IUser) {
     const payload: TokenPayload = { user_id: Number(user.id) };
-    const token = jwt.sign(payload, Env.SECRET!, { expiresIn: '5m' });
+    const token = jwt.sign(payload, Env.SECRET!, { expiresIn: '1h' });
     return token;
   }
   
@@ -488,6 +488,10 @@ export class AuthService {
   
   setAccessTokenCookie(res: Response, token: string) {
     res.cookie('access_token', token);
+  }
+  
+  clearAccessTokenCookie(res: Response) {
+    res.clearCookie('access_token');
   }
   
   

@@ -56,6 +56,13 @@ export function createAuthController(db: Services) {
   });
   
   
+  AuthController.get('/logout', async (req: Request, res: Response) => {
+    delete req.session.oauth;
+    authService.clearAccessTokenCookie(res);
+    return res.redirect('/');
+  });
+  
+  
   AuthController.post('/password/bind', async (req: Request, res: Response) => {
     try {
       const { id, username, password, confirmPassword } = req.body;
@@ -102,10 +109,8 @@ export function createAuthController(db: Services) {
       const payload = await authService.authorizeGoogle(req, Env.GOOGLE_REDIRECT_URI!);
       const userAuth = await authService.registerByGoogle(payload.sub, payload.email!);
       const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
-      return res.status(StatusCodes.OK).send({
-        message: 'Google authentication successful',
-        data: { accessToken }
-      });
+      authService.setAccessTokenCookie(res, accessToken);
+      return res.redirect('/');
       
     } catch (error) {
       const appError = createAppError(error, 'Google authentication failed');
@@ -179,10 +184,8 @@ export function createAuthController(db: Services) {
       const payload = await authService.authorizeGithub(req);
       const userAuth = await authService.registerByGithub(String(payload.id), payload.email || payload.login);
       const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
-      return res.status(StatusCodes.OK).send({
-        message: 'Github authentication successful',
-        data: { accessToken }
-      });
+      authService.setAccessTokenCookie(res, accessToken);
+      return res.redirect('/');
 
     } catch (error) {
       const appError = createAppError(error, 'Github authentication failed');
@@ -211,10 +214,8 @@ export function createAuthController(db: Services) {
       const payload = await authService.authorizeDiscord(req);
       const userAuth = await authService.registerByDiscord(String(payload.id), payload.username);
       const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
-      return res.status(StatusCodes.OK).send({
-        message: 'Discord authentication successful',
-        data: { accessToken }
-      });
+      authService.setAccessTokenCookie(res, accessToken);
+      return res.redirect('/');
 
     } catch (error) {
       const appError = createAppError(error, 'Discord authentication failed');
@@ -237,10 +238,8 @@ export function createAuthController(db: Services) {
       const payload = await authService.authorizeMicrosoft(req);
       const userAuth = await authService.registerByMicrosoft(String(payload.oid), payload.userPrincipalName);
       const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
-      return res.status(StatusCodes.OK).send({
-        message: 'Microsoft authentication successful',
-        data: { accessToken }
-      });
+      authService.setAccessTokenCookie(res, accessToken);
+      return res.redirect('/');
 
     } catch (error) {
       const appError = createAppError(error, 'Microsoft authentication failed');

@@ -93,14 +93,21 @@ describe('Google Auth API - Register', () => {
   test('JWT Token after Register/Login by Google', async () => {
     const res = await request(app)
       .get('/api/v1/auth/google/callback')
-      .set('Accept', 'application/json');
+      .set('Accept', 'application/json')
+      .redirects(0);
+    expect(res.status).equal(302);
 
     const userAuth = await db.userAuth.findOne({
       providerUserId: googleLoginPayload.sub,
       displayIdentifier: googleLoginPayload.email,
     });
 
-    const token = await authService.verifyJWT(res.body.data.accessToken);
+    const setCookies = res.headers['set-cookie'] as string[] | undefined;
+    const tokenCookie = setCookies?.find((cookie: string) => cookie.startsWith('access_token='));
+    const accessToken = tokenCookie?.split(';')[0].split('=')[1];
+    expect(accessToken).toBeTruthy();
+
+    const token = await authService.verifyJWT(accessToken!);
     expect(token.user_id).toBeTruthy();
     expect(token.user_id == Number(userAuth?.user?.id)).toBe(true);
   });

@@ -4,11 +4,15 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import expressContext from 'express-request-context';  // Enable req.context and res.context
 import expressSession from 'express-session';
 import cookieParser from 'cookie-parser';
+import jwt from 'jsonwebtoken';
 import { RequestContext } from '@mikro-orm/core';
 
 import { type Services } from '@/db/db.js';
+import Env from '@/env-loader.js';
 import { createAuthController } from '@/features/auth/auth.controller.js';
-import type { OAuthBindState } from '@/features/auth/auth.dto.js';
+import type { OAuthBindState, TokenPayload } from '@/features/auth/auth.dto.js';
+import type { IUser } from '@/features/user/entities/User.js';
+import type { IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserController } from '@/features/user/user.controller.js';
 import { LoggerMiddleware } from '@/middleware/logger.js';
 
@@ -45,12 +49,38 @@ export async function createApp(db: Services) {
   });
   
   // Pages Routers
-  app.get('/', (req, res) => {
-    res.render('home');
+  app.get('/', async (req, res) => {
+    let isLoggedIn = false;
+    let user: IUser | null = null;
+    let userAuths: IUserAuth[] = [];
+
+    const accessToken = req.cookies?.access_token;
+    if (accessToken) {
+      try {
+        const decoded = jwt.verify(accessToken, Env.SECRET!) as TokenPayload;
+        user = await db.user.findOne({ id: decoded.user_id });
+        if (user) {
+          isLoggedIn = true;
+        }
+      } catch {
+        // Invalid or expired token
+      }
+    }
+
+    if (isLoggedIn) {
+      userAuths = await db.userAuth.find({ user: user!.id });
+    }
+
+    res.render('home', { isLoggedIn, user, userAuths });
   });
   
   app.use('/auth/login', (req, res) => {
     res.render('login');
+  });
+  
+  app.use('/cookie', (req, res) => {
+    res.cookie('name', 'rakka');
+    res.send('Cookies send successfully');
   });
   
   // API Routers
