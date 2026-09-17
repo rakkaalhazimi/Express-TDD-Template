@@ -1,10 +1,10 @@
-import { describe, test, expect, afterEach, vi, beforeAll } from "vitest";
+import { describe, expect, vi, beforeAll } from "vitest";
 import request from 'supertest';
 
-import { initTestORM } from "@/db/db.js";
-import { AuthService, createAuthService } from "@/features/auth/auth.service.js";
+import { test } from "./auth.context.js";
+
+import { AuthService } from "@/features/auth/auth.service.js";
 import { AuthProvider } from "@/features/user/entities/UserAuth.js";
-import { createApp } from "@/index.js";
 
 
 
@@ -20,10 +20,6 @@ const googleLoginPayload = {
 //   });
 // });
 
-const db = await initTestORM();
-const app = await createApp(db);
-const authService = createAuthService(db);
-
 describe('Google Auth API - Page', () => {
   
   beforeAll(() => {
@@ -32,7 +28,7 @@ describe('Google Auth API - Page', () => {
   });
   
   
-  test('GET google auth exists', async () => {
+  test('GET google auth exists', async ({ app }) => {
     const res = await request(app)
       .get('/api/v1/auth/google')
       .redirects(0);
@@ -40,7 +36,7 @@ describe('Google Auth API - Page', () => {
   });
 
 
-  test('GET google auth callback exists', async () => {
+  test('GET google auth callback exists', async ({ app }) => {
     const res = await request(app).get('/api/v1/auth/google/callback');
     expect(res.status).not.equal(404);
   });
@@ -56,7 +52,7 @@ describe('Google Auth API - Register', () => {
   });
   
   
-  afterEach(async () => {
+  test.afterEach(async ({ db }) => {
     await db.orm.schema.clear({
       truncate: true,
       clearIdentityMap: true,
@@ -64,7 +60,7 @@ describe('Google Auth API - Register', () => {
   });
   
   
-  test('Register new user by Google', async () => {
+  test('Register new user by Google', async ({ app, db }) => {
     await request(app).get('/api/v1/auth/google/callback');
     const newAuthUser = await db.userAuth.findOne({
       providerUserId: googleLoginPayload.sub,
@@ -75,7 +71,7 @@ describe('Google Auth API - Register', () => {
   });
   
   
-  test('Register existing user by Google', async () => {
+  test('Register existing user by Google', async ({ app, db, authService }) => {
     await authService.registerByGoogle(googleLoginPayload.sub, googleLoginPayload.email);
     await request(app)
       .get('/api/v1/auth/google/callback')
@@ -90,7 +86,7 @@ describe('Google Auth API - Register', () => {
   });
 
 
-  test('JWT Token after Register/Login by Google', async () => {
+  test('JWT Token after Register/Login by Google', async ({ app, db, authService, accessTokenCookie }) => {
     const res = await request(app)
       .get('/api/v1/auth/google/callback')
       .set('Accept', 'application/json')
@@ -101,10 +97,8 @@ describe('Google Auth API - Register', () => {
       providerUserId: googleLoginPayload.sub,
       displayIdentifier: googleLoginPayload.email,
     });
-
-    const setCookies = res.headers['set-cookie'] as string[] | undefined;
-    const tokenCookie = setCookies?.find((cookie: string) => cookie.startsWith('access_token='));
-    const accessToken = tokenCookie?.split(';')[0].split('=')[1];
+    
+    const accessToken = accessTokenCookie(res);
     expect(accessToken).toBeTruthy();
 
     const token = await authService.verifyJWT(accessToken!);
@@ -124,7 +118,7 @@ describe('Google Auth API - Error', () => {
       });
   });
   
-  test('Error on authorize Google', async () => {
+  test('Error on authorize Google', async ({ app }) => {
     const res = await request(app).get('/api/v1/auth/google/callback');
     expect(res.status).equal(500);
   });

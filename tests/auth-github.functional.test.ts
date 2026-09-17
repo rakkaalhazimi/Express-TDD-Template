@@ -1,10 +1,10 @@
-import { describe, test, expect, afterEach, vi, beforeAll } from "vitest";
+import { describe, expect, vi, beforeAll } from "vitest";
 import request from 'supertest';
 
-import { initTestORM } from "@/db/db.js";
-import { AuthService, createAuthService } from "@/features/auth/auth.service.js";
+import { test } from "./auth.context.js";
+
+import { AuthService } from "@/features/auth/auth.service.js";
 import { AuthProvider } from "@/features/user/entities/UserAuth.js";
-import { createApp } from "@/index.js";
 
 
 
@@ -12,10 +12,6 @@ const githubLoginPayload = {
   id: '123456789',
   login: 'expressjstdd',
 };
-
-const db = await initTestORM();
-const app = await createApp(db);
-const authService = createAuthService(db);
 
 
 describe('Github Auth API - Page', () => {
@@ -26,7 +22,7 @@ describe('Github Auth API - Page', () => {
   });
 
 
-  test('GET github auth exists', async () => {
+  test('GET github auth exists', async ({ app }) => {
     const res = await request(app)
       .get('/api/v1/auth/github')
       .redirects(0);
@@ -34,7 +30,7 @@ describe('Github Auth API - Page', () => {
   });
 
 
-  test('GET github auth callback exists', async () => {
+  test('GET github auth callback exists', async ({ app }) => {
     const res = await request(app).get('/api/v1/auth/github/callback');
     expect(res.status).not.equal(404);
   });
@@ -50,7 +46,7 @@ describe('Github Auth API - Register', () => {
   });
 
 
-  afterEach(async () => {
+  test.afterEach(async ({ db }) => {
     await db.orm.schema.clear({
       truncate: true,
       clearIdentityMap: true,
@@ -58,7 +54,7 @@ describe('Github Auth API - Register', () => {
   });
 
 
-  test('Register new user by Github', async () => {
+  test('Register new user by Github', async ({ app, db }) => {
     await request(app).get('/api/v1/auth/github/callback');
     const newAuthUser = await db.userAuth.findOne({
       providerUserId: githubLoginPayload.id,
@@ -69,7 +65,7 @@ describe('Github Auth API - Register', () => {
   });
 
 
-  test('Register existing user by Github', async () => {
+  test('Register existing user by Github', async ({ app, db, authService }) => {
     await authService.registerByGithub(githubLoginPayload.id, githubLoginPayload.login);
     await request(app)
       .get('/api/v1/auth/github/callback')
@@ -84,7 +80,7 @@ describe('Github Auth API - Register', () => {
   });
   
   
-  test('JWT Token after Register/Login by Github', async () => {
+  test('JWT Token after Register/Login by Github', async ({ app, db, authService, accessTokenCookie }) => {
     const res = await request(app)
       .get('/api/v1/auth/github/callback')
       .set('Accept', 'application/json')
@@ -96,9 +92,7 @@ describe('Github Auth API - Register', () => {
       displayIdentifier: githubLoginPayload.login,
     });
 
-    const setCookies = res.headers['set-cookie'] as string[] | undefined;
-    const tokenCookie = setCookies?.find((cookie: string) => cookie.startsWith('access_token='));
-    const accessToken = tokenCookie?.split(';')[0].split('=')[1];
+    const accessToken = accessTokenCookie(res);
     expect(accessToken).toBeTruthy();
 
     const token = await authService.verifyJWT(accessToken!);
@@ -120,7 +114,7 @@ describe('Github Auth API - Error', () => {
   });
 
 
-  test('Error on authorize Github', async () => {
+  test('Error on authorize Github', async ({ app }) => {
     const res = await request(app).get('/api/v1/auth/github/callback');
     expect(res.status).equal(500);
   });

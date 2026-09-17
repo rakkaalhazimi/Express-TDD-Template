@@ -1,11 +1,9 @@
-import { describe, test, expect, beforeEach, afterEach } from "vitest";
+import { describe, expect } from "vitest";
 import request from 'supertest';
 
-import { initTestORM } from "@/db/db.js";
-import { UserSeeder } from "@/db/seeders/UserSeeder.js";
-import { createAuthService } from "@/features/auth/auth.service.js";
+import { test } from "./auth.context.js";
+
 import { AuthProvider } from "@/features/user/entities/UserAuth.js";
-import { createApp } from "@/index.js";
 
 
 
@@ -27,12 +25,9 @@ const newUser = {
   confirmPassword: "new-pass"
 };
 
-const db = await initTestORM();
-const app = await createApp(db);
-
 
 describe('Password Auth API - Page', () => {
-  test('POST Login Exists', async () => {
+  test('POST Login Exists', async ({ app }) => {
     const res = await request(app)
       .post('/auth/login')
       .send(validUser);
@@ -40,7 +35,7 @@ describe('Password Auth API - Page', () => {
   });
   
   
-  test('POST Register Exists', async () => {
+  test('POST Register Exists', async ({ app }) => {
     const res = await request(app)
       .post('/api/v1/auth/register')
       .send(newUser);
@@ -51,9 +46,8 @@ describe('Password Auth API - Page', () => {
 
 describe('Password Auth API - Login/Register', () => {
   
-  beforeEach(async () => {
+  test.beforeEach(async ({ authService }) => {
     // Insert valid user to database
-    const authService = createAuthService(db);
     await authService.register(
       validUser.username, 
       validUser.password, 
@@ -62,7 +56,7 @@ describe('Password Auth API - Login/Register', () => {
   });
   
   
-  afterEach(async () => {
+  test.afterEach(async ({ db }) => {
     // Truncate all rows without deleting tables
     await db.orm.schema.clear({
       truncate: true,
@@ -71,7 +65,7 @@ describe('Password Auth API - Login/Register', () => {
   });
   
   
-  test('POST Login with wrong username', async () => {
+  test('POST Login with wrong username', async ({ app }) => {
     const res = await request(app)
       .post('/api/v1/auth/login')
       .send({
@@ -82,7 +76,7 @@ describe('Password Auth API - Login/Register', () => {
   });
   
   
-  test('POST Login with wrong password', async () => {
+  test('POST Login with wrong password', async ({ app }) => {
     const res = await request(app)
       .post('/api/v1/auth/login')
       .send({
@@ -93,7 +87,7 @@ describe('Password Auth API - Login/Register', () => {
   });
   
   
-  test('POST Login with correct username and password', async () => {
+  test('POST Login with correct username and password', async ({ app }) => {
     const res = await request(app)
       .post('/api/v1/auth/login')
       .send(validUser);
@@ -101,7 +95,7 @@ describe('Password Auth API - Login/Register', () => {
   });
   
   
-  test('POST Register with username that already exists', async () => {
+  test('POST Register with username that already exists', async ({ app }) => {
     const res = await request(app)
       .post('/api/v1/auth/register')
       .send(validUser);
@@ -109,7 +103,7 @@ describe('Password Auth API - Login/Register', () => {
   });
   
   
-  test('POST Register with unmatched password', async () => {
+  test('POST Register with unmatched password', async ({ app }) => {
     const res = await request(app)
       .post('/api/v1/auth/register')
       .send({
@@ -121,7 +115,7 @@ describe('Password Auth API - Login/Register', () => {
   });
   
   
-  test('POST Register with matched password', async () => {
+  test('POST Register with matched password', async ({ app }) => {
     const res = await request(app)
       .post('/api/v1/auth/register')
       .send(newUser);
