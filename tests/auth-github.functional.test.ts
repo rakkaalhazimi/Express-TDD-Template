@@ -16,12 +16,6 @@ const githubLoginPayload = {
 
 describe('Github Auth API - Page', () => {
 
-  beforeAll(() => {
-    vi.spyOn(AuthService.prototype, 'authorizeGoogle')
-      .mockResolvedValue(githubLoginPayload as any);
-  });
-
-
   test('GET github auth exists', async ({ app }) => {
     const res = await request(app)
       .get('/api/v1/auth/github')

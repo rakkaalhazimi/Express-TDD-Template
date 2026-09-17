@@ -22,12 +22,6 @@ const googleLoginPayload = {
 
 describe('Google Auth API - Page', () => {
   
-  beforeAll(() => {
-    vi.spyOn(AuthService.prototype, 'authorizeGoogle')
-      .mockResolvedValue(googleLoginPayload as any);
-  });
-  
-  
   test('GET google auth exists', async ({ app }) => {
     const res = await request(app)
       .get('/api/v1/auth/google')

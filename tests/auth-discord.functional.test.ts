@@ -15,12 +15,6 @@ const discordLoginPayload = {
 
 describe('Discord Auth API - Page', () => {
 
-  beforeAll(() => {
-    vi.spyOn(AuthService.prototype, 'authorizeDiscord')
-      .mockResolvedValue(discordLoginPayload as any);
-  });
-
-
   test('GET discord auth exists', async ({ app }) => {
     const res = await request(app)
       .get('/api/v1/auth/discord')

@@ -15,12 +15,6 @@ const microsoftLoginPayload = {
 
 describe('Microsoft Auth API - Page', () => {
 
-  beforeAll(() => {
-    vi.spyOn(AuthService.prototype, 'authorizeMicrosoft')
-      .mockResolvedValue(microsoftLoginPayload as any);
-  });
-
-
   test('GET microsoft auth exists', async ({ app }) => {
     const res = await request(app)
       .get('/api/v1/auth/microsoft')
