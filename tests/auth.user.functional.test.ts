@@ -15,18 +15,18 @@ const validUser = {
   confirmPassword: 'test',
 };
 
-const newUser2 = {
+const newUser = {
   id: 0,
   username: 'test2',
   password: 'test2',
   confirmPassword: 'test2',
-}
+};
 
 const newUserGoogle = {
   id: 0,
   uniqueId: '123456-google',
   displayIdentifier: 'test-express-tdd',
-}
+};
 
 const googleLoginPayload = {
   sub: 'google-user-123',
@@ -46,17 +46,17 @@ const newUserAuth = {
 const oauthState = {
   state: 'test',
   userId: 0,
-}
+};
 
 
 describe('Auth API - Account Binding', () => {
   
   test.beforeAll(() => {
-    vi.spyOn(AuthService.prototype, 'authorizeGoogle')
-      .mockResolvedValue(googleLoginPayload as any);
-      
     vi.spyOn(AuthService.prototype, 'verifyOAuthState')
       .mockReturnValue(oauthState);
+
+    vi.spyOn(AuthService.prototype, 'authorizeGoogle')
+      .mockResolvedValue(googleLoginPayload as any);
   });
   
   
@@ -95,14 +95,14 @@ describe('Auth API - Account Binding', () => {
   test('Bind password account', async ({ app, db }) => {
     const res = await request(app)
       .post('/api/v1/auth/password/bind')
-      .send({...newUser2, id: newUserGoogle.id});  // Register with account made from google
+      .send({...newUser, id: newUserGoogle.id});  // Register with account made from google
     
     const userAuth = await db.userAuth.findOne({
-      providerUserId: newUser2.username,
+      providerUserId: newUser.username,
       provider: AuthProvider.PASSWORD,
     }, { populate: ['user'] });
     
-    expect(userAuth?.user?.username).toBe(newUser2.username);
+    expect(userAuth?.user?.username).toBe(newUser.username);
     expect(res.status).equal(201);
   });
   
@@ -111,10 +111,12 @@ describe('Auth API - Account Binding', () => {
     const res = await request(app)
       .post('/api/v1/auth/password/bind')
       .send(validUser);
+
     const foundUserAuth = await db.userAuth.find({
       providerUserId: validUser.username,
       provider: AuthProvider.PASSWORD,
     });
+
     expect(foundUserAuth.length).toBeLessThan(2);
     expect(res.status).equal(409);
   });
@@ -122,47 +124,74 @@ describe('Auth API - Account Binding', () => {
 
   test('Bind google account', async ({ app, db }) => {
     const res = await request(app)
-      .post('/api/v1/auth/google/bind')
-      .send({...newUserAuthGoogle, id: validUser.id});
+      .get('/api/v1/auth/google/bind');
     
     const userAuth = await db.userAuth.findOne({
-      providerUserId: newUserAuthGoogle.uniqueId,
+      providerUserId: googleLoginPayload.sub,
       provider: AuthProvider.GOOGLE,
     }, { populate: ['user'] });
+    console.log('User auth: ', userAuth);
     
     expect(userAuth?.user?.username).toBe(validUser.username);
-    expect(res.status).not.equal(201);
+    expect(res.status).equal(201);
   });
   
   
-  test('Bind google account if exist', async ({ app, db }) => {
+  test('Bind google account if exist', async ({ app, db, authService }) => {
+    await authService.registerByGoogle(
+      googleLoginPayload.sub, 
+      googleLoginPayload.email,
+    );
+    
     const res = await request(app)
-      .post('/api/v1/auth/google/bind')
-      .send({...newUserAuthGoogle, id: validUser.id});
+      .get('/api/v1/auth/google/bind');
     
-    const userAuth = await db.userAuth.findOne({
-      providerUserId: newUserAuthGoogle.uniqueId,
+    const userAuth = await db.userAuth.find({
+      providerUserId: googleLoginPayload.sub,
       provider: AuthProvider.GOOGLE,
-    }, { populate: ['user'] });
-    
-    expect(userAuth?.user?.username).toBe(validUser.username);
-    expect(res.status).not.equal(201);
+    });
+    expect(userAuth.length).toBeLessThan(2);
+    expect(res.status).equal(409);
   });
   
   
   test('Bind github account', async ({ app, db }) => {
     const res = await request(app)
-      .post('/api/v1/auth/github/bind')
-      .send(newUserAuth);
-    const userAuth = await db.userAuth.findOne(newUserAuth);
+      .get('/api/v1/auth/github/bind')
+      .send({...newUserAuth, id: validUser.id});
+    
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: newUserAuth.uniqueId,
+      provider: AuthProvider.GITHUB,
+    }, { populate: ['user'] });
+    
     expect(userAuth?.user?.username).toBe(validUser.username);
-    expect(res.status).not.equal(404);
+    expect(res.status).equal(201);
+  });
+  
+  
+  test('Bind github account if exist', async ({ app, db, authService }) => {
+    await authService.registerByGithub(
+      newUserAuth.uniqueId, 
+      newUserAuth.displayIdentifier,
+    );
+    const res = await request(app)
+      .get('/api/v1/auth/github/bind')
+      .send({...newUserAuth, id: validUser.id});
+    
+    const userAuth = await db.userAuth.find({
+      providerUserId: newUserAuthGoogle.uniqueId,
+      provider: AuthProvider.GITHUB,
+    });
+    
+    expect(userAuth.length).toBeLessThan(2);
+    expect(res.status).equal(409);
   });
   
   
   test('Bind discord account', async ({ app, db }) => {
     const res = await request(app)
-      .post('/api/v1/auth/discord/bind')
+      .get('/api/v1/auth/discord/bind')
       .send(newUserAuth);
     const userAuth = await db.userAuth.findOne(newUserAuth);
     expect(userAuth?.user?.username).toBe(validUser.username);
@@ -172,7 +201,7 @@ describe('Auth API - Account Binding', () => {
   
   test('Bind microsoft account', async ({ app, db }) => {
     const res = await request(app)
-      .post('/api/v1/auth/microsoft/bind')
+      .get('/api/v1/auth/microsoft/bind')
       .send(newUserAuth);
     const userAuth = await db.userAuth.findOne(newUserAuth);
     expect(userAuth?.user?.username).toBe(validUser.username);
