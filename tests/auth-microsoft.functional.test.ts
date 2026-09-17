@@ -97,6 +97,84 @@ describe('Microsoft Auth API - Register', () => {
 
 
 
+describe('Microsoft Auth API - Bind', () => {
+  
+  const validUser = {
+    username: "test",
+    password: "test",
+    confirmPassword: "test"
+  };
+  
+  const oauthState = {
+    state: 'test',
+    userId: 0,
+  };
+  
+  test.beforeAll(() => {
+    vi.spyOn(AuthService.prototype, 'verifyOAuthState')
+      .mockReturnValue(oauthState);
+    vi.spyOn(AuthService.prototype, 'authorizeMicrosoft')
+      .mockResolvedValue(microsoftLoginPayload as any);
+  });
+  
+  
+  test.beforeEach(async ({ authService }) => {
+    const user = await authService.register(
+      validUser.username, 
+      validUser.password, 
+      validUser.confirmPassword,
+    );
+    oauthState.userId = Number(user.id);
+  });
+  
+  
+  test.afterEach(async ({ db }) => {
+    await db.orm.schema.clear({
+      truncate: true,
+      clearIdentityMap: true,
+    });
+  });
+  
+  
+  test.afterAll(() => {
+    vi.clearAllMocks();
+  });
+  
+  
+  test('Bind microsoft account', async ({ app, db }) => {
+    const res = await request(app)
+      .get('/api/v1/auth/microsoft/bind');
+    
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: microsoftLoginPayload.oid,
+      provider: AuthProvider.MICROSOFT,
+    }, { populate: ['user'] });
+    
+    expect(userAuth?.user?.username).toBe(validUser.username);
+    expect(res.status).equal(201);
+  });
+  
+  
+  test('Bind microsoft account if exist', async ({ app, db, authService }) => {
+    await authService.registerByMicrosoft(
+      microsoftLoginPayload.oid, 
+      microsoftLoginPayload.userPrincipalName,
+    );
+    
+    const res = await request(app)
+      .get('/api/v1/auth/microsoft/bind');
+    
+    const userAuth = await db.userAuth.find({
+      providerUserId: microsoftLoginPayload.oid,
+      provider: AuthProvider.MICROSOFT,
+    });
+    expect(userAuth.length).toBeLessThan(2);
+    expect(res.status).equal(409);
+  });
+
+});
+
+
 describe('Microsoft Auth API - Error', () => {
 
   beforeAll(() => {
