@@ -169,13 +169,8 @@ export function createAuthController(db: Services) {
   
 
   AuthController.get('/github', async (req: Request, res: Response) => {
-    const url = new URL('https://github.com/login/oauth/authorize');
-    url.search = new URLSearchParams({
-      client_id: Env.GITHUB_CLIENT_ID!,
-      redirect_uri: Env.GITHUB_REDIRECT_URI!,
-      scope: 'read:user',
-    }).toString();
-    res.redirect(url.toString());
+    const oauthUrl = authService.createGithubOAuthUrl(Env.GITHUB_REDIRECT_URI!);
+    res.redirect(oauthUrl);
   });
   
 

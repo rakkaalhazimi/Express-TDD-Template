@@ -183,6 +183,18 @@ export class AuthService {
     }).toString();
     return url.toString();
   }
+
+
+  createGithubOAuthUrl(redirectUri: string, state: string = '') {
+    const url = new URL('https://github.com/login/oauth/authorize');
+    url.search = new URLSearchParams({
+      client_id: Env.GITHUB_CLIENT_ID!,
+      redirect_uri: redirectUri,
+      scope: 'read:user',
+      state,
+    }).toString();
+    return url.toString();
+  }
   
   
   async authorizeGoogle(req: Request, redirectUri: string) {
