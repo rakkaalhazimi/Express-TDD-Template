@@ -27,5 +27,14 @@ export const test = baseTest
   .extend('db', () => forkDB(initDB))
   // Create auth service sharing the forked db of the current test
   .extend('authService', ({ db }) => createAuthService(db))
-  .extend('accessTokenCookie', () => accessTokenCookie);
+  .extend('accessTokenCookie', () => accessTokenCookie)
+  // Truncate all rows without deleting tables
+  .extend('clearDatabaseRow', ({ db }) =>
+    async () => {
+      await db.orm.schema.clear({
+        truncate: true,
+        clearIdentityMap: true,
+      });
+    }
+  );
   

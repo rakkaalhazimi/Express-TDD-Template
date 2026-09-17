@@ -39,11 +39,8 @@ describe('Discord Auth API - Register', () => {
   });
 
 
-  test.afterEach(async ({ db }) => {
-    await db.orm.schema.clear({
-      truncate: true,
-      clearIdentityMap: true,
-    });
+  test.afterEach(async ({ clearDatabaseRow }) => {
+    await clearDatabaseRow();
   });
 
 
@@ -127,11 +124,8 @@ describe('Discord Auth API - Bind', () => {
   });
   
   
-  test.afterEach(async ({ db }) => {
-    await db.orm.schema.clear({
-      truncate: true,
-      clearIdentityMap: true,
-    });
+  test.afterEach(async ({ clearDatabaseRow }) => {
+    await clearDatabaseRow();
   });
   
   
