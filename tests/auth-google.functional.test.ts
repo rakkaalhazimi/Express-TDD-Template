@@ -34,6 +34,18 @@ describe('Google Auth API - Page', () => {
 		const res = await request(app).get('/api/v1/auth/google/callback');
 		expect(res.status).not.equal(404);
 	});
+
+
+	test('GET google bind exists', async ({ app }) => {
+		const res = await request(app).get('/api/v1/auth/google-bind');
+		expect(res.status).not.equal(404);
+	});
+
+
+	test('GET google bind callback exists', async ({ app }) => {
+		const res = await request(app).get('/api/v1/auth/google/bind');
+		expect(res.status).not.equal(404);
+	});
 });
 
 

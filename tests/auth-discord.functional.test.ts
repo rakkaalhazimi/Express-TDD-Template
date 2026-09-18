@@ -27,6 +27,18 @@ describe('Discord Auth API - Page', () => {
 		const res = await request(app).get('/api/v1/auth/discord/callback');
 		expect(res.status).not.equal(404);
 	});
+	
+	
+	test('GET discord bind exists', async ({ app }) => {
+		const res = await request(app).get('/api/v1/auth/discord-bind');
+		expect(res.status).not.equal(404);
+	});
+	
+	
+	test('GET discord bind callback exists', async ({ app }) => {
+		const res = await request(app).get('/api/v1/auth/discord/bind');
+		expect(res.status).not.equal(404);
+	});
 });
 
 
