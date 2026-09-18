@@ -339,7 +339,7 @@ return res.status(appError.status).json({
 
 
   AuthController.get('/microsoft', async (req: Request, res: Response) => {
-    const url = await authService.getMSAuthUrl();
+    const url = await authService.createMicrosoftOAuthUrl();
     res.redirect(url);
   });
   

@@ -507,7 +507,7 @@ export class AuthService {
   }
   
   
-  async getMSAuthUrl() {
+  async createMicrosoftOAuthUrl() {
     return await this.msClient.getAuthCodeUrl({
       scopes: ['user.read', 'openid', 'profile', 'email'],
       redirectUri: Env.MICROSOFT_REDIRECT_URI!,
