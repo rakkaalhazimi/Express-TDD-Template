@@ -287,14 +287,8 @@ export function createAuthController(db: Services) {
 
 
 	AuthController.get('/discord', async (req: Request, res: Response) => {
-		const url = new URL('https://discord.com/oauth2/authorize');
-		url.search = new URLSearchParams({
-			client_id: Env.DISCORD_CLIENT_ID!,
-			redirect_uri: Env.DISCORD_REDIRECT_URI!,
-			response_type: 'code',
-			scope: 'identify',
-		}).toString();
-		res.redirect(url.toString());
+		const oauthUrl = authService.createDiscordOAuthUrl(Env.DISCORD_REDIRECT_URI!);
+		res.redirect(oauthUrl);
 	});
   
 
@@ -309,6 +303,26 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Discord authentication failed');
 			return res.status(appError.status).send({
+				message: appError.message,
+				data: null,
+			});
+		}
+	});
+  
+  
+  AuthController.get('/discord-bind', async (req: Request, res: Response) => {
+		try {
+			req.session.oauth = await authService.createOAuthState(req);
+			const oauthUrl = authService.createDiscordOAuthUrl(
+				Env.DISCORD_BIND_REDIRECT_URI!, 
+				req.session.oauth.state
+			);
+			res.redirect(oauthUrl);
+    
+		} catch(error) {
+			const appError = createAppError(error, 'Discord bind account failed');
+			logError(req, appError);
+			return res.status(appError.status).json({
 				message: appError.message,
 				data: null,
 			});
@@ -369,8 +383,8 @@ export function createAuthController(db: Services) {
 
 
 	AuthController.get('/microsoft', async (req: Request, res: Response) => {
-		const url = await authService.createMicrosoftOAuthUrl();
-		res.redirect(url);
+		const oauthUrl = await authService.createMicrosoftOAuthUrl(Env.MICROSOFT_REDIRECT_URI!);
+		res.redirect(oauthUrl);
 	});
   
 
@@ -392,7 +406,27 @@ export function createAuthController(db: Services) {
 	});
   
   
-  AuthController.get('/microsoft/bind', async (req: Request, res: Response) => {
+  AuthController.get('/microsoft-bind', async (req: Request, res: Response) => {
+		try {
+			req.session.oauth = await authService.createOAuthState(req);
+			const oauthUrl = await authService.createMicrosoftOAuthUrl(
+				Env.MICROSOFT_REDIRECT_URI!, 
+				req.session.oauth.state
+			);
+			res.redirect(oauthUrl);
+    
+		} catch(error) {
+			const appError = createAppError(error, 'Microsoft bind account failed');
+			logError(req, appError);
+			return res.status(appError.status).json({
+				message: appError.message,
+				data: null,
+			});
+		}
+	});
+  
+  
+	AuthController.get('/microsoft/bind', async (req: Request, res: Response) => {
 		try {
 			const { state } = req.query;
 			const payload = await authService.authorizeMicrosoft(req);

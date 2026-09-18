@@ -214,6 +214,28 @@ export class AuthService {
 	}
   
   
+  createDiscordOAuthUrl(redirectUri: string, state: string = '') {
+		const url = new URL('https://discord.com/oauth2/authorize');
+		url.search = new URLSearchParams({
+			client_id: Env.DISCORD_CLIENT_ID!,
+			redirect_uri: redirectUri,
+			response_type: 'code',
+			scope: 'identify',
+      state,
+		}).toString();
+		return url.toString();
+	}
+  
+  
+  async createMicrosoftOAuthUrl(redirectUri: string, state: string = '') {
+		return await this.msClient.getAuthCodeUrl({
+			scopes: ['user.read', 'openid', 'profile', 'email'],
+			redirectUri: redirectUri,
+      state
+		});
+	}
+  
+  
 	async authorizeGoogle(req: Request, redirectUri: string) {
 		const { code } = req.query;
 		const authResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -543,14 +565,6 @@ export class AuthService {
 	}
   
   
-	async createMicrosoftOAuthUrl() {
-		return await this.msClient.getAuthCodeUrl({
-			scopes: ['user.read', 'openid', 'profile', 'email'],
-			redirectUri: Env.MICROSOFT_REDIRECT_URI!,
-		});
-	}
-  
-  
 	async authorizeMicrosoft(req: Request) {
 		const { code } = req.query;
     
@@ -602,7 +616,7 @@ export class AuthService {
 	}
   
   
-  async bindMicrosoftAccount(
+	async bindMicrosoftAccount(
 		userId: number, 
 		uniqueId: string, 
 		displayIdentifier: string
