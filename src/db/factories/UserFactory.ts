@@ -5,12 +5,12 @@ import { UserSchema, type IUser } from '@/features/user/entities/User.js';
 
 
 export class UserFactory extends Factory<IUser> {
-  model = UserSchema;
+	model = UserSchema;
 
-  definition(): Partial<IUser> {
-    return {
-      username: '',
-      password: '',
-    };
-  }
+	definition(): Partial<IUser> {
+		return {
+			username: '',
+			password: '',
+		};
+	}
 }

@@ -1,5 +1,5 @@
-export interface Response<T = any> {
-  message: string,
-  data: T,
-  status: number
+export interface Response<T = unknown> {
+	message: string,
+	data: T,
+	status: number
 };

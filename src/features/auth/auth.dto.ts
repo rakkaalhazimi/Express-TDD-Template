@@ -1,8 +1,8 @@
 export interface TokenPayload {
-  user_id: number;
+	user_id: number;
 };
 
 export interface OAuthBindState {
-  state: string;
-  userId: number;
+	state: string;
+	userId: number;
 }

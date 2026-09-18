@@ -19,76 +19,77 @@ import { LoggerMiddleware } from '@/middleware/logger.js';
 
 
 declare module 'express-session' {
-  interface SessionData {
-    oauth: OAuthBindState;
-  }
+	interface SessionData {
+		oauth: OAuthBindState;
+	}
 }
 
 export async function createApp(db: Services) {
-  const app = express();
-  app.use(express.urlencoded({ extended: true }));         // Access form data from user
-  app.use(express.json());                                 // Parse json data from response
-  app.use(cookieParser());                                 // Parse cookies from request header
-  app.use(expressSession({
-    secret: 'secret',
-    resave: false,
-    saveUninitialized: false,
-  }));
-  app.use(expressContext.default());
-  app.use(LoggerMiddleware);
-  // Context for Entity manager
-  app.use((req: Request, res: Response, next: NextFunction) => {
-    RequestContext.create(db.orm.em, next);
-  });
+	const app = express();
+	app.use(express.urlencoded({ extended: true }));         // Access form data from user
+	app.use(express.json());                                 // Parse json data from response
+	app.use(cookieParser());                                 // Parse cookies from request header
+	app.use(expressSession({
+		secret: 'secret',
+		resave: false,
+		saveUninitialized: false,
+	}));
+	app.use(expressContext.default());
+	app.use(LoggerMiddleware);
+	// app.use(JWTGuardMiddleware);
+	// Context for Entity manager
+	app.use((req: Request, res: Response, next: NextFunction) => {
+		RequestContext.create(db.orm.em, next);
+	});
   
-  app.set("view engine", "ejs");                           // View engine use .ejs extensions
-  app.set('views', path.join(import.meta.dirname, 'views'));
+	app.set("view engine", "ejs");                           // View engine use .ejs extensions
+	app.set('views', path.join(import.meta.dirname, 'views'));
   
-  app.get('/health-check', (req, res) => {
-    res.status(200).send({ status: 'healthy' });
-  });
+	app.get('/health-check', (req, res) => {
+		res.status(200).send({ status: 'healthy' });
+	});
   
-  // Pages Routers
-  app.get('/', async (req, res) => {
-    let isLoggedIn = false;
-    let user: IUser | null = null;
-    let userAuths: IUserAuth[] = [];
+	// Pages Routers
+	app.get('/', async (req, res) => {
+		let isLoggedIn = false;
+		let user: IUser | null = null;
+		let userAuths: IUserAuth[] = [];
 
-    const accessToken = req.cookies?.access_token;
-    if (accessToken) {
-      try {
-        const decoded = jwt.verify(accessToken, Env.SECRET!) as TokenPayload;
-        user = await db.user.findOne({ id: decoded.user_id });
-        if (user) {
-          isLoggedIn = true;
-        }
-      } catch {
-        // Invalid or expired token
-      }
-    }
+		const accessToken = req.cookies?.access_token;
+		if (accessToken) {
+			try {
+				const decoded = jwt.verify(accessToken, Env.SECRET!) as TokenPayload;
+				user = await db.user.findOne({ id: decoded.user_id });
+				if (user) {
+					isLoggedIn = true;
+				}
+			} catch {
+				// Invalid or expired token
+			}
+		}
 
-    if (isLoggedIn) {
-      userAuths = await db.userAuth.find({ user: user!.id });
-    }
+		if (isLoggedIn) {
+			userAuths = await db.userAuth.find({ user: user!.id });
+		}
 
-    res.render('home', { isLoggedIn, user, userAuths });
-  });
+		res.render('home', { isLoggedIn, user, userAuths });
+	});
   
-  app.use('/auth/login', (req, res) => {
-    res.render('login');
-  });
+	app.use('/auth/login', (req, res) => {
+		res.render('login');
+	});
   
-  app.use('/cookie', (req, res) => {
-    res.cookie('name', 'rakka');
-    res.send('Cookies send successfully');
-  });
+	app.use('/cookie', (req, res) => {
+		res.cookie('name', 'rakka');
+		res.send('Cookies send successfully');
+	});
   
-  // API Routers
-  const apiRouter = express.Router();
-  apiRouter.use('/auth', createAuthController(db));
-  apiRouter.use('/user', createUserController(db));
+	// API Routers
+	const apiRouter = express.Router();
+	apiRouter.use('/auth', createAuthController(db));
+	apiRouter.use('/user', createUserController(db));
   
-  app.use('/api/v1', apiRouter);
+	app.use('/api/v1', apiRouter);
   
-  return app;
+	return app;
 }

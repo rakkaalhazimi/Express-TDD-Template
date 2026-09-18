@@ -12,19 +12,19 @@ import { UserAuthSchema } from '@/features/user/entities/UserAuth.js';
 
 
 export default defineConfig({
-  driver: PostgreSqlDriver,
-  entities: [UserSchema, UserAuthSchema],
-  migrations: {
-    path: './dist/db/migrations', // Path to compiled migrations (used at runtime)
-    pathTs: './src/db/migrations', // Path to TypeScript source migrations (used by CLI)
-    snapshot: false,
-  },
+	driver: PostgreSqlDriver,
+	entities: [UserSchema, UserAuthSchema],
+	migrations: {
+		path: './dist/db/migrations', // Path to compiled migrations (used at runtime)
+		pathTs: './src/db/migrations', // Path to TypeScript source migrations (used by CLI)
+		snapshot: false,
+	},
 
-  clientUrl: Env.DATABASE_URL!,
+	clientUrl: Env.DATABASE_URL!,
   
-  seeder: {
-    pathTs: './src/db/seeders'
-  },
+	seeder: {
+		pathTs: './src/db/seeders'
+	},
   
-  extensions: [Migrator, SeedManager]
+	extensions: [Migrator, SeedManager]
 });

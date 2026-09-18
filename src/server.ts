@@ -8,5 +8,5 @@ const db = await initORM();
 const app = await createApp(db);
 
 app.listen(env.PORT, () => {
-  console.log(`Server running on: http://localhost:${env.PORT}`);
+	console.log(`Server running on: http://localhost:${env.PORT}`);
 });
