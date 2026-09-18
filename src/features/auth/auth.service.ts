@@ -492,6 +492,42 @@ export class AuthService {
 	}
   
   
+	async bindDiscordAccount(
+		userId: number, 
+		uniqueId: string, 
+		displayIdentifier: string
+	): Promise<IUserAuth> {
+    
+		const user = await this.db.user.findOne({ id: userId });
+		if (!user) {
+			throw new AppError({
+				status: StatusCodes.NOT_FOUND,
+				message: 'User not found'
+			});
+		}
+    
+		const userAuth = await this.db.userAuth.findOne({
+			provider: AuthProvider.DISCORD,
+			providerUserId: uniqueId,
+		});
+		if (userAuth) {
+			throw new AppError({
+				status: StatusCodes.CONFLICT,
+				message: 'User auth already exist',
+			});
+		}
+    
+		const newUserAuth = await this.userService.createUserAuth({
+			user,
+			provider: AuthProvider.DISCORD,
+			providerUserId: uniqueId,
+			displayIdentifier
+		});
+    
+		return newUserAuth;
+	}
+  
+  
 	async unbindDiscordAccount(userId: number): Promise<IUserAuth> {
 		const boundAuth = await this.db.userAuth.findOne({
 			user: userId,

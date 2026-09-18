@@ -314,6 +314,36 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
+  
+  
+	AuthController.get('/discord/bind', async (req: Request, res: Response) => {
+		try {
+			const { state } = req.query;
+			const payload = await authService.authorizeDiscord(req);
+			const authState = authService.verifyOAuthState(req, state as string);
+			const userAuth = await authService.bindDiscordAccount(
+				authState.userId, 
+				String(payload.id), 
+				payload.username,
+			);
+      
+			return res.status(StatusCodes.CREATED).send({
+				message: 'Bind discord auth success',
+				data: { 
+					providerUserId: userAuth.providerUserId, 
+					provider: userAuth.provider 
+				},
+			});
+      
+		} catch (error) {
+			const appError = createAppError(error, 'Bind discord auth failed');
+			logError(req, appError);
+			return res.status(appError.status).json({
+				message: appError.message,
+				data: null,
+			});
+		}
+	});
 
 
 	AuthController.post('/discord/unbind', async (req: Request, res: Response) => {
