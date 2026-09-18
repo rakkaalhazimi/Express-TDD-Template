@@ -390,6 +390,36 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
+  
+  
+  AuthController.get('/microsoft/bind', async (req: Request, res: Response) => {
+		try {
+			const { state } = req.query;
+			const payload = await authService.authorizeMicrosoft(req);
+			const authState = authService.verifyOAuthState(req, state as string);
+			const userAuth = await authService.bindMicrosoftAccount(
+				authState.userId, 
+				String(payload.oid), 
+				payload.userPrincipalName,
+			);
+      
+			return res.status(StatusCodes.CREATED).send({
+				message: 'Bind microsoft auth success',
+				data: { 
+					providerUserId: userAuth.providerUserId, 
+					provider: userAuth.provider 
+				},
+			});
+      
+		} catch (error) {
+			const appError = createAppError(error, 'Bind microsoft auth failed');
+			logError(req, appError);
+			return res.status(appError.status).json({
+				message: appError.message,
+				data: null,
+			});
+		}
+	});
 
   
 	AuthController.post('/microsoft/unbind', async (req: Request, res: Response) => {
