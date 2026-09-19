@@ -47,7 +47,7 @@ export function createAuthController(db: Services) {
       
 		} catch (error) {
 			const appError = createAppError(error, 'Register failed');
-			req.context.error = appError;
+			logError(req, appError);
 			return res.status(appError.status).json({
 				message: appError.message,
 				data: null,
@@ -114,6 +114,7 @@ export function createAuthController(db: Services) {
       
 		} catch (error) {
 			const appError = createAppError(error, 'Google authentication failed');
+			logError(req, appError);
 			return res.status(appError.status).send({
 				message: appError.message,
 				data: null,
@@ -206,6 +207,7 @@ export function createAuthController(db: Services) {
 
 		} catch (error) {
 			const appError = createAppError(error, 'Github authentication failed');
+			logError(req, appError);
 			return res.status(appError.status).send({
 				message: appError.message,
 				data: null,
@@ -302,6 +304,7 @@ export function createAuthController(db: Services) {
 
 		} catch (error) {
 			const appError = createAppError(error, 'Discord authentication failed');
+			logError(req, appError);
 			return res.status(appError.status).send({
 				message: appError.message,
 				data: null,
@@ -398,6 +401,7 @@ export function createAuthController(db: Services) {
 
 		} catch (error) {
 			const appError = createAppError(error, 'Microsoft authentication failed');
+			logError(req, appError);
 			return res.status(appError.status).send({
 				message: appError.message,
 				data: null,
