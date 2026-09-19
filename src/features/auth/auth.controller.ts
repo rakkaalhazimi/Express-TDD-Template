@@ -391,7 +391,7 @@ export function createAuthController(db: Services) {
 	AuthController.get('/microsoft/callback', async (req: Request, res: Response) => {
 		try {
 			const payload = await authService.authorizeMicrosoft(req, Env.MICROSOFT_REDIRECT_URI!);
-			const userAuth = await authService.registerByMicrosoft(String(payload.oid), payload.userPrincipalName);
+			const userAuth = await authService.registerByMicrosoft(String(payload.id), payload.userPrincipalName);
 			const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
 			authService.setAccessTokenCookie(res, accessToken);
 			return res.redirect('/');
@@ -433,7 +433,7 @@ export function createAuthController(db: Services) {
 			const authState = authService.verifyOAuthState(req, state as string);
 			const userAuth = await authService.bindMicrosoftAccount(
 				authState.userId, 
-				String(payload.oid), 
+				String(payload.id),
 				payload.userPrincipalName,
 			);
       

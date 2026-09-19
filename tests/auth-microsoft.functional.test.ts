@@ -9,7 +9,7 @@ import { AuthProvider, UserAuthSchema } from "@/features/user/entities/UserAuth.
 
 
 const microsoftLoginPayload = {
-	oid: 'microsoft-user-123',
+	id: 'microsoft-user-123',
 	userPrincipalName: 'user@example.com',
 };
 
@@ -59,25 +59,25 @@ describe('Microsoft Auth API - Register', () => {
 	test('Register new user by Microsoft', async ({ app, db }) => {
 		await request(app).get('/api/v1/auth/microsoft/callback');
 		const newAuthUser = await db.userAuth.findOne({
-			providerUserId: microsoftLoginPayload.oid,
+			providerUserId: microsoftLoginPayload.id,
 			displayIdentifier: microsoftLoginPayload.userPrincipalName,
 		});
-		expect(newAuthUser?.providerUserId).equal(microsoftLoginPayload.oid);
+		expect(newAuthUser?.providerUserId).equal(microsoftLoginPayload.id);
 		expect(newAuthUser?.provider).equal(AuthProvider.MICROSOFT);
 	});
 
 
 	test('Register existing user by Microsoft', async ({ app, db, authService }) => {
-		await authService.registerByMicrosoft(microsoftLoginPayload.oid, microsoftLoginPayload.userPrincipalName);
+		await authService.registerByMicrosoft(microsoftLoginPayload.id, microsoftLoginPayload.userPrincipalName);
 		await request(app)
 			.get('/api/v1/auth/microsoft/callback')
 			.set('Accept', 'application/json');
 
 		const userAuth = await db.userAuth.findOne({
-			providerUserId: microsoftLoginPayload.oid,
+			providerUserId: microsoftLoginPayload.id,
 			displayIdentifier: microsoftLoginPayload.userPrincipalName,
 		});
-		expect(userAuth?.providerUserId).equal(microsoftLoginPayload.oid);
+		expect(userAuth?.providerUserId).equal(microsoftLoginPayload.id);
 		expect(userAuth?.provider).equal(AuthProvider.MICROSOFT);
 	});
 
@@ -90,7 +90,7 @@ describe('Microsoft Auth API - Register', () => {
 		expect(res.status).equal(302);
 
 		const userAuth = await db.userAuth.findOne({
-			providerUserId: microsoftLoginPayload.oid,
+			providerUserId: microsoftLoginPayload.id,
 			displayIdentifier: microsoftLoginPayload.userPrincipalName,
 		});
 
@@ -152,7 +152,7 @@ describe('Microsoft Auth API - Bind', () => {
 			.get('/api/v1/auth/microsoft/bind');
     
 		const userAuth = await db.userAuth.findOne({
-			providerUserId: microsoftLoginPayload.oid,
+			providerUserId: microsoftLoginPayload.id,
 			provider: AuthProvider.MICROSOFT,
 		}, { populate: ['user'] });
     
@@ -163,7 +163,7 @@ describe('Microsoft Auth API - Bind', () => {
   
 	test('Bind microsoft account if exist', async ({ app, db, authService }) => {
 		await authService.registerByMicrosoft(
-			microsoftLoginPayload.oid, 
+			microsoftLoginPayload.id, 
 			microsoftLoginPayload.userPrincipalName,
 		);
     
@@ -171,7 +171,7 @@ describe('Microsoft Auth API - Bind', () => {
 			.get('/api/v1/auth/microsoft/bind');
     
 		const userAuth = await db.userAuth.find({
-			providerUserId: microsoftLoginPayload.oid,
+			providerUserId: microsoftLoginPayload.id,
 			provider: AuthProvider.MICROSOFT,
 		});
 		expect(userAuth.length).toBeLessThan(2);
@@ -209,7 +209,7 @@ describe('Microsoft Auth API - Unbind', () => {
 		db.em.create(UserAuthSchema, {
 			user: passwordAuth!.user,
 			provider: AuthProvider.MICROSOFT,
-			providerUserId: microsoftLoginPayload.oid,
+			providerUserId: microsoftLoginPayload.id,
 			displayIdentifier: microsoftLoginPayload.userPrincipalName,
 		});
 		await db.em.flush();
@@ -220,7 +220,7 @@ describe('Microsoft Auth API - Unbind', () => {
 			.set('Cookie', `access_token=${accessToken}`);
     
 		const boundAuth = await db.userAuth.findOne({
-			providerUserId: microsoftLoginPayload.oid,
+			providerUserId: microsoftLoginPayload.id,
 			provider: AuthProvider.MICROSOFT,
 		});
 		expect(boundAuth).toBeNull();
