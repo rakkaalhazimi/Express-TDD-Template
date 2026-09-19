@@ -198,7 +198,7 @@ export function createAuthController(db: Services) {
 
 	AuthController.get('/github/callback', async (req: Request, res: Response) => {
 		try {
-			const payload = await authService.authorizeGithub(req);
+			const payload = await authService.authorizeGithub(req, Env.GITHUB_REDIRECT_URI!);
 			const userAuth = await authService.registerByGithub(String(payload.id), payload.email || payload.login);
 			const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
 			authService.setAccessTokenCookie(res, accessToken);
@@ -237,7 +237,7 @@ export function createAuthController(db: Services) {
 	AuthController.get('/github/bind', async (req: Request, res: Response) => {
 		try {
 			const { state } = req.query;
-			const payload = await authService.authorizeGithub(req);
+			const payload = await authService.authorizeGithub(req, Env.GITHUB_BIND_REDIRECT_URI!);
 			const authState = authService.verifyOAuthState(req, state as string);
 			const userAuth = await authService.bindGithubAccount(
 				authState.userId, 
@@ -294,7 +294,7 @@ export function createAuthController(db: Services) {
 
 	AuthController.get('/discord/callback', async (req: Request, res: Response) => {
 		try {
-			const payload = await authService.authorizeDiscord(req);
+			const payload = await authService.authorizeDiscord(req, Env.DISCORD_REDIRECT_URI!);
 			const userAuth = await authService.registerByDiscord(String(payload.id), payload.username);
 			const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
 			authService.setAccessTokenCookie(res, accessToken);
@@ -310,7 +310,7 @@ export function createAuthController(db: Services) {
 	});
   
   
-  AuthController.get('/discord-bind', async (req: Request, res: Response) => {
+	AuthController.get('/discord-bind', async (req: Request, res: Response) => {
 		try {
 			req.session.oauth = await authService.createOAuthState(req);
 			const oauthUrl = authService.createDiscordOAuthUrl(
@@ -333,7 +333,7 @@ export function createAuthController(db: Services) {
 	AuthController.get('/discord/bind', async (req: Request, res: Response) => {
 		try {
 			const { state } = req.query;
-			const payload = await authService.authorizeDiscord(req);
+			const payload = await authService.authorizeDiscord(req, Env.DISCORD_BIND_REDIRECT_URI!);
 			const authState = authService.verifyOAuthState(req, state as string);
 			const userAuth = await authService.bindDiscordAccount(
 				authState.userId, 
@@ -390,7 +390,7 @@ export function createAuthController(db: Services) {
 
 	AuthController.get('/microsoft/callback', async (req: Request, res: Response) => {
 		try {
-			const payload = await authService.authorizeMicrosoft(req);
+			const payload = await authService.authorizeMicrosoft(req, Env.MICROSOFT_REDIRECT_URI!);
 			const userAuth = await authService.registerByMicrosoft(String(payload.oid), payload.userPrincipalName);
 			const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
 			authService.setAccessTokenCookie(res, accessToken);
@@ -406,7 +406,7 @@ export function createAuthController(db: Services) {
 	});
   
   
-  AuthController.get('/microsoft-bind', async (req: Request, res: Response) => {
+	AuthController.get('/microsoft-bind', async (req: Request, res: Response) => {
 		try {
 			req.session.oauth = await authService.createOAuthState(req);
 			const oauthUrl = await authService.createMicrosoftOAuthUrl(
@@ -429,7 +429,7 @@ export function createAuthController(db: Services) {
 	AuthController.get('/microsoft/bind', async (req: Request, res: Response) => {
 		try {
 			const { state } = req.query;
-			const payload = await authService.authorizeMicrosoft(req);
+			const payload = await authService.authorizeMicrosoft(req, Env.MICROSOFT_BIND_REDIRECT_URI!);
 			const authState = authService.verifyOAuthState(req, state as string);
 			const userAuth = await authService.bindMicrosoftAccount(
 				authState.userId, 

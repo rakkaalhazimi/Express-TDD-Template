@@ -29,7 +29,7 @@ export class AuthService {
 		this.msClient = new ConfidentialClientApplication({
 			auth: {
 				clientId: Env.MICROSOFT_CLIENT_ID!,
-				authority: `https://login.microsoftonline.com/common/`, // Personal Account
+				authority: `https://login.microsoftonline.com/common/`, // Multitenant ID + Personal Account
 				clientSecret: Env.MICROSOFT_CLIENT_SECRET!,
 			},
 		});
@@ -214,24 +214,24 @@ export class AuthService {
 	}
   
   
-  createDiscordOAuthUrl(redirectUri: string, state: string = '') {
+	createDiscordOAuthUrl(redirectUri: string, state: string = '') {
 		const url = new URL('https://discord.com/oauth2/authorize');
 		url.search = new URLSearchParams({
 			client_id: Env.DISCORD_CLIENT_ID!,
 			redirect_uri: redirectUri,
 			response_type: 'code',
 			scope: 'identify',
-      state,
+			state,
 		}).toString();
 		return url.toString();
 	}
   
   
-  async createMicrosoftOAuthUrl(redirectUri: string, state: string = '') {
+	async createMicrosoftOAuthUrl(redirectUri: string, state: string = '') {
 		return await this.msClient.getAuthCodeUrl({
 			scopes: ['user.read', 'openid', 'profile', 'email'],
 			redirectUri: redirectUri,
-      state
+			state
 		});
 	}
   
@@ -338,7 +338,7 @@ export class AuthService {
 	}
 
 
-	async authorizeGithub(req: Request) {
+	async authorizeGithub(req: Request, redirectUri: string) {
 		const { code } = req.query;
 		const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
 			method: 'POST',
@@ -350,7 +350,7 @@ export class AuthService {
 				client_id: Env.GITHUB_CLIENT_ID,
 				client_secret: Env.GITHUB_CLIENT_SECRET,
 				code,
-				redirect_uri: Env.GITHUB_REDIRECT_URI,
+				redirect_uri: redirectUri,
 			})
 		});
 
@@ -449,13 +449,13 @@ export class AuthService {
 	}
 
 
-	async authorizeDiscord(req: Request) {
+	async authorizeDiscord(req: Request, redirectUri: string) {
 		const { code } = req.query;
     
 		const body = new URLSearchParams({
 			grant_type: 'authorization_code',
 			code: String(code),
-			redirect_uri: Env.DISCORD_REDIRECT_URI!,
+			redirect_uri: redirectUri,
 		});
 
 		const credential = Buffer
@@ -565,13 +565,13 @@ export class AuthService {
 	}
   
   
-	async authorizeMicrosoft(req: Request) {
+	async authorizeMicrosoft(req: Request, redirectUri: string) {
 		const { code } = req.query;
     
 		const tokenResponse = await this.msClient.acquireTokenByCode({
 			code: String(code),
 			scopes: ['user.read', 'openid', 'profile', 'email'],
-			redirectUri: Env.MICROSOFT_REDIRECT_URI!,
+			redirectUri: redirectUri,
 		});
 
 		const accessToken = tokenResponse.accessToken;
