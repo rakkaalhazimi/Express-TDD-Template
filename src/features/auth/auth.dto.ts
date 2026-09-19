@@ -27,3 +27,18 @@ export interface OAuthBindState {
 	state: string;
 	userId: number;
 }
+
+export interface UserLoginDto {
+	username: string;
+	password: string;
+}
+
+export interface UserRegistrationDto {
+	username: string;
+	password: string;
+	confirmPassword: string;
+}
+
+export interface UserPasswordBindDto extends UserRegistrationDto {
+	id: string;
+}

@@ -2,6 +2,11 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
+import type { 
+	UserLoginDto, 
+	UserPasswordBindDto, 
+	UserRegistrationDto 
+} from './auth.dto.js';
 import { createAuthService } from './auth.service.js';
 import type { Services } from '@/db/db.js';
 import Env from '@/env-loader.js';
@@ -17,7 +22,8 @@ export function createAuthController(db: Services) {
 
 	AuthController.post('/login', async (req: Request, res: Response) => {
 		try {
-			const user = await authService.login(req.body.username, req.body.password);
+			const { username, password } = req.body as UserLoginDto;
+			const user = await authService.login(username, password);
 			const accessToken = await authService.genereateUserToken(Number(user.id));
 			authService.setAccessTokenCookie(res, accessToken);
 			return res.status(StatusCodes.OK).json({
@@ -38,7 +44,7 @@ export function createAuthController(db: Services) {
 
 	AuthController.post('/register', async (req: Request, res: Response) => {
 		try {
-			const { username, password, confirmPassword } = req.body;
+			const { username, password, confirmPassword } = req.body as UserRegistrationDto;
 			const userAuth = await authService.register(username, password, confirmPassword);
 			return res.status(StatusCodes.CREATED).send({
 				message: 'Register success',
@@ -65,7 +71,7 @@ export function createAuthController(db: Services) {
   
 	AuthController.post('/password/bind', async (req: Request, res: Response) => {
 		try {
-			const { id, username, password, confirmPassword } = req.body;
+			const { id, username, password, confirmPassword } = req.body as UserPasswordBindDto;
 			const userAuth = await authService.bindPasswordAccount(
 				parseInt(id), 
 				username, 
