@@ -15,6 +15,7 @@ export default defineConfig([
 		rules: {
 			"@stylistic/semi": ["error", "always"],
 			"@stylistic/indent": ["error", "tab", { tabLength: 2, SwitchCase: 1 }],
+			"@stylistic/no-trailing-spaces": "error"
 		},
 	},
 ]);

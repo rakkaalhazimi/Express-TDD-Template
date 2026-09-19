@@ -25,7 +25,7 @@ export async function initORM(options?: Partial<Options>): Promise<Services> {
 		...config,
 		...options,
 	});
-  
+
 	// save to cache before returning
 	return cache = {
 		orm,
@@ -38,7 +38,7 @@ export async function initORM(options?: Partial<Options>): Promise<Services> {
 export async function initTestORM() {
 	const db = await initORM({
 		allowGlobalContext: true,  // for test only, to prevent using .fork() for EntityManager
-		driver: SqliteDriver, 
+		driver: SqliteDriver,
 		dbName: ':memory:',
 	});
 	await db.orm.schema.create();  // Create database tables

@@ -21,10 +21,10 @@ export default defineConfig({
 	},
 
 	clientUrl: Env.DATABASE_URL!,
-  
+
 	seeder: {
 		pathTs: './src/db/seeders'
 	},
-  
+
 	extensions: [Migrator, SeedManager]
 });

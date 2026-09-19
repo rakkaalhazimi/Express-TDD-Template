@@ -40,15 +40,15 @@ export function createAppError(error: unknown, message: string): AppError {
 
 
 export async function handleError(
-	e: unknown, 
-	message: string, 
+	e: unknown,
+	message: string,
 	status: number | null = null
 ): Promise<Response> {
 	const error = e as Error;
 	console.error(error.stack, error.message);
-  
+
 	return {
-		message, 
+		message,
 		status: status ?? StatusCodes.INTERNAL_SERVER_ERROR,
 		data: error.message,
 	};

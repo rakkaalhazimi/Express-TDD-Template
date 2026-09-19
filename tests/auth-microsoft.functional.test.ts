@@ -107,69 +107,69 @@ describe('Microsoft Auth API - Register', () => {
 
 
 describe('Microsoft Auth API - Bind', () => {
-  
+
 	const validUser = {
 		username: "test",
 		password: "test",
 		confirmPassword: "test"
 	};
-  
+
 	const oauthState = {
 		state: 'test',
 		userId: 0,
 	};
-  
+
 	test.beforeAll(() => {
 		vi.spyOn(AuthService.prototype, 'verifyOAuthState')
 			.mockReturnValue(oauthState);
 		vi.spyOn(AuthService.prototype, 'authorizeMicrosoft')
 			.mockResolvedValue(microsoftLoginPayload);
 	});
-  
-  
+
+
 	test.beforeEach(async ({ authService }) => {
 		const user = await authService.register(
-			validUser.username, 
-			validUser.password, 
+			validUser.username,
+			validUser.password,
 			validUser.confirmPassword,
 		);
 		oauthState.userId = Number(user.id);
 	});
-  
-  
+
+
 	test.afterEach(async ({ clearDatabaseRow }) => {
 		await clearDatabaseRow();
 	});
-  
-  
+
+
 	test.afterAll(() => {
 		vi.clearAllMocks();
 	});
-  
-  
+
+
 	test('Bind microsoft account', async ({ app, db }) => {
 		const res = await request(app)
 			.get('/api/v1/auth/microsoft/bind');
-    
+
 		const userAuth = await db.userAuth.findOne({
 			providerUserId: microsoftLoginPayload.id,
 			provider: AuthProvider.MICROSOFT,
 		}, { populate: ['user'] });
-    
+
 		expect(userAuth?.user?.username).toBe(validUser.username);
 		expect(res.status).equal(201);
 	});
-  
-  
+
+
 	test('Bind microsoft account if exist', async ({ app, db, authService }) => {
 		await authService.registerByMicrosoft(
-			microsoftLoginPayload.id, 
+			microsoftLoginPayload.id,
 			microsoftLoginPayload.userPrincipalName,
 		);
-    
+
 		const res = await request(app)
 			.get('/api/v1/auth/microsoft/bind');
-    
+
 		const userAuth = await db.userAuth.find({
 			providerUserId: microsoftLoginPayload.id,
 			provider: AuthProvider.MICROSOFT,
@@ -182,22 +182,22 @@ describe('Microsoft Auth API - Bind', () => {
 
 
 describe('Microsoft Auth API - Unbind', () => {
-  
+
 	const validUser = {
 		username: "test",
 		password: "test",
 		confirmPassword: "test"
 	};
-  
+
 	test.afterEach(async ({ clearDatabaseRow }) => {
 		await clearDatabaseRow();
 	});
-  
-  
+
+
 	test('Unbind microsoft account', async ({ app, db, authService }) => {
 		await authService.register(
-			validUser.username, 
-			validUser.password, 
+			validUser.username,
+			validUser.password,
 			validUser.confirmPassword,
 		);
 		const passwordAuth = await db.userAuth.findOne({
@@ -205,7 +205,7 @@ describe('Microsoft Auth API - Unbind', () => {
 			provider: AuthProvider.PASSWORD,
 		}, { populate: ['user'] });
 		const userId = Number(passwordAuth!.user.id);
-    
+
 		db.em.create(UserAuthSchema, {
 			user: passwordAuth!.user,
 			provider: AuthProvider.MICROSOFT,
@@ -214,11 +214,11 @@ describe('Microsoft Auth API - Unbind', () => {
 		});
 		await db.em.flush();
 		const accessToken = await authService.genereateUserToken(userId);
-    
+
 		const res = await request(app)
 			.post('/api/v1/auth/microsoft/unbind')
 			.set('Cookie', `access_token=${accessToken}`);
-    
+
 		const boundAuth = await db.userAuth.findOne({
 			providerUserId: microsoftLoginPayload.id,
 			provider: AuthProvider.MICROSOFT,
@@ -226,12 +226,12 @@ describe('Microsoft Auth API - Unbind', () => {
 		expect(boundAuth).toBeNull();
 		expect(res.status).equal(200);
 	});
-  
-  
+
+
 	test('Unbind microsoft account if not bound', async ({ app, db, authService }) => {
 		await authService.register(
-			validUser.username, 
-			validUser.password, 
+			validUser.username,
+			validUser.password,
 			validUser.confirmPassword,
 		);
 		const passwordAuth = await db.userAuth.findOne({
@@ -240,11 +240,11 @@ describe('Microsoft Auth API - Unbind', () => {
 		}, { populate: ['user'] });
 		const userId = Number(passwordAuth?.user!.id);
 		const accessToken = await authService.genereateUserToken(userId);
-    
+
 		const res = await request(app)
 			.post('/api/v1/auth/microsoft/unbind')
 			.set('Cookie', `access_token=${accessToken}`);
-    
+
 		expect(res.status).equal(404);
 	});
 });

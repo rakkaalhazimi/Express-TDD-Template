@@ -41,14 +41,14 @@ export async function createApp(db: Services) {
 	app.use((req: Request, res: Response, next: NextFunction) => {
 		RequestContext.create(db.orm.em, next);
 	});
-  
+
 	app.set("view engine", "ejs");                           // View engine use .ejs extensions
 	app.set('views', path.join(import.meta.dirname, 'views'));
-  
+
 	app.get('/health-check', (req, res) => {
 		res.status(200).send({ status: 'healthy' });
 	});
-  
+
 	// Pages Routers
 	app.get('/', async (req, res) => {
 		let isLoggedIn = false;
@@ -74,22 +74,22 @@ export async function createApp(db: Services) {
 
 		res.render('home', { isLoggedIn, user, userAuths });
 	});
-  
+
 	app.use('/auth/login', (req, res) => {
 		res.render('login');
 	});
-  
+
 	app.use('/cookie', (req, res) => {
 		res.cookie('name', 'rakka');
 		res.send('Cookies send successfully');
 	});
-  
+
 	// API Routers
 	const apiRouter = express.Router();
 	apiRouter.use('/auth', createAuthController(db));
 	apiRouter.use('/user', createUserController(db));
-  
+
 	app.use('/api/v1', apiRouter);
-  
+
 	return app;
 }

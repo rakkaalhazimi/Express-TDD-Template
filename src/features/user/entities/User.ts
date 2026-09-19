@@ -7,16 +7,16 @@ export const UserSchema = defineEntity({
 		id: p.bigint().primary(),
 		username: p.string().unique().length(100),
 		password: p.string(),
-    
+
 		createdAt: p
 			.datetime()
 			.onCreate(() => new Date()),
-      
+
 		updatedAt: p
 			.datetime()
 			.onCreate(() => new Date())
 			.onUpdate(() => new Date()),
-      
+
 		deletedAt: p.datetime().nullable()
 	},
 });

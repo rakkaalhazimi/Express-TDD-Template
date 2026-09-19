@@ -33,12 +33,12 @@ const colors = {
 winston.addColors(colors);
 
 
-const { 
-	combine, 
-	timestamp, 
+const {
+	combine,
+	timestamp,
 	colorize,
-	printf, 
-	errors 
+	printf,
+	errors
 } = winston.format;
 
 
@@ -84,10 +84,10 @@ export function logError(req: Request, error: AppError) {
 
 export function LoggerMiddleware(req: Request, res: Response, next: NextFunction) {
 	const start = performance.now();
-  
+
 	const requestId = req.headers["x-request-id"] || shortId();
 	const { method, url } = req;
-  
+
 	const childLogger = logger.child({
 		requestId,
 		url,
@@ -96,14 +96,14 @@ export function LoggerMiddleware(req: Request, res: Response, next: NextFunction
 
 	childLogger.info('');
 	req.context.logger = childLogger;
-  
+
 	res.on('finish', () => {
 		const { statusCode } = res;
 		const logData = {
 			durationMs: performance.now() - start,
 			statusCode,
 		};
-    
+
 		if (statusCode >= 500) {
 			childLogger.error('Server error', logData);
 		} else if (statusCode >= 400) {

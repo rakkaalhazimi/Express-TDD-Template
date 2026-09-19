@@ -73,16 +73,16 @@ describe('Github Auth API - Register', () => {
 		await request(app)
 			.get('/api/v1/auth/github/callback')
 			.set('Accept', 'application/json');
-      
-		const userAuth = await db.userAuth.findOne({ 
+
+		const userAuth = await db.userAuth.findOne({
 			providerUserId: githubLoginPayload.id,
 			displayIdentifier: githubLoginPayload.login,
 		});
 		expect(userAuth?.providerUserId).equal(githubLoginPayload.id);
 		expect(userAuth?.provider).equal(AuthProvider.GITHUB);
 	});
-  
-  
+
+
 	test('JWT Token after Register/Login by Github', async ({ app, db, authService, accessTokenCookie }) => {
 		const res = await request(app)
 			.get('/api/v1/auth/github/callback')
@@ -108,69 +108,69 @@ describe('Github Auth API - Register', () => {
 
 
 describe('Github Auth API - Bind', () => {
-  
+
 	const validUser = {
 		username: "test",
 		password: "test",
 		confirmPassword: "test"
 	};
-  
+
 	const oauthState = {
 		state: 'test',
 		userId: 0,
 	};
-  
+
 	test.beforeAll(() => {
 		vi.spyOn(AuthService.prototype, 'verifyOAuthState')
 			.mockReturnValue(oauthState);
 		vi.spyOn(AuthService.prototype, 'authorizeGithub')
 			.mockResolvedValue(githubLoginPayload);
 	});
-  
-  
+
+
 	test.beforeEach(async ({ authService }) => {
 		const user = await authService.register(
-			validUser.username, 
-			validUser.password, 
+			validUser.username,
+			validUser.password,
 			validUser.confirmPassword,
 		);
 		oauthState.userId = Number(user.id);
 	});
-  
-  
+
+
 	test.afterEach(async ({ clearDatabaseRow }) => {
 		await clearDatabaseRow();
 	});
-  
-  
+
+
 	test.afterAll(() => {
 		vi.clearAllMocks();
 	});
-  
-  
+
+
 	test('Bind github account', async ({ app, db }) => {
 		const res = await request(app)
 			.get('/api/v1/auth/github/bind');
-    
+
 		const userAuth = await db.userAuth.findOne({
 			providerUserId: githubLoginPayload.id,
 			provider: AuthProvider.GITHUB,
 		}, { populate: ['user'] });
-    
+
 		expect(userAuth?.user?.username).toBe(validUser.username);
 		expect(res.status).equal(201);
 	});
-  
-  
+
+
 	test('Bind github account if exist', async ({ app, db, authService }) => {
 		await authService.registerByGithub(
-			githubLoginPayload.id, 
+			githubLoginPayload.id,
 			githubLoginPayload.login,
 		);
-    
+
 		const res = await request(app)
 			.get('/api/v1/auth/github/bind');
-    
+
 		const userAuth = await db.userAuth.find({
 			providerUserId: githubLoginPayload.id,
 			provider: AuthProvider.GITHUB,
@@ -183,22 +183,22 @@ describe('Github Auth API - Bind', () => {
 
 
 describe('Github Auth API - Unbind', () => {
-  
+
 	const validUser = {
 		username: "test",
 		password: "test",
 		confirmPassword: "test"
 	};
-  
+
 	test.afterEach(async ({ clearDatabaseRow }) => {
 		await clearDatabaseRow();
 	});
-  
-  
+
+
 	test('Unbind github account', async ({ app, db, authService }) => {
 		await authService.register(
-			validUser.username, 
-			validUser.password, 
+			validUser.username,
+			validUser.password,
 			validUser.confirmPassword,
 		);
 		const passwordAuth = await db.userAuth.findOne({
@@ -206,18 +206,18 @@ describe('Github Auth API - Unbind', () => {
 			provider: AuthProvider.PASSWORD,
 		}, { populate: ['user'] });
 		const userId = Number(passwordAuth?.user!.id);
-    
+
 		await authService.bindGithubAccount(
-			userId, 
-			githubLoginPayload.id, 
+			userId,
+			githubLoginPayload.id,
 			githubLoginPayload.login,
 		);
 		const accessToken = await authService.genereateUserToken(userId);
-    
+
 		const res = await request(app)
 			.post('/api/v1/auth/github/unbind')
 			.set('Cookie', `access_token=${accessToken}`);
-    
+
 		const boundAuth = await db.userAuth.findOne({
 			providerUserId: githubLoginPayload.id,
 			provider: AuthProvider.GITHUB,
@@ -225,12 +225,12 @@ describe('Github Auth API - Unbind', () => {
 		expect(boundAuth).toBeNull();
 		expect(res.status).equal(200);
 	});
-  
-  
+
+
 	test('Unbind github account if not bound', async ({ app, db, authService }) => {
 		await authService.register(
-			validUser.username, 
-			validUser.password, 
+			validUser.username,
+			validUser.password,
 			validUser.confirmPassword,
 		);
 		const passwordAuth = await db.userAuth.findOne({
@@ -239,11 +239,11 @@ describe('Github Auth API - Unbind', () => {
 		}, { populate: ['user'] });
 		const userId = Number(passwordAuth?.user!.id);
 		const accessToken = await authService.genereateUserToken(userId);
-    
+
 		const res = await request(app)
 			.post('/api/v1/auth/github/unbind')
 			.set('Cookie', `access_token=${accessToken}`);
-    
+
 		expect(res.status).equal(404);
 	});
 });

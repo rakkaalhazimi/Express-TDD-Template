@@ -2,10 +2,10 @@ import express from 'express';
 import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
-import type { 
-	UserLoginDto, 
-	UserPasswordBindDto, 
-	UserRegistrationDto 
+import type {
+	UserLoginDto,
+	UserPasswordBindDto,
+	UserRegistrationDto
 } from './auth.dto.js';
 import { createAuthService } from './auth.service.js';
 import type { Services } from '@/db/db.js';
@@ -30,7 +30,7 @@ export function createAuthController(db: Services) {
 				message: 'Login success',
 				data: { accessToken },
 			});
-      
+
 		} catch (error) {
 			const appError = createAppError(error, 'Login failed');
 			logError(req, appError);
@@ -40,7 +40,7 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
+
 
 	AuthController.post('/register', async (req: Request, res: Response) => {
 		try {
@@ -50,7 +50,7 @@ export function createAuthController(db: Services) {
 				message: 'Register success',
 				data: { providerUserId: userAuth.providerUserId, provider: userAuth.provider },
 			});
-      
+
 		} catch (error) {
 			const appError = createAppError(error, 'Register failed');
 			logError(req, appError);
@@ -60,29 +60,29 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
-  
+
+
 	AuthController.get('/logout', async (req: Request, res: Response) => {
 		delete req.session.oauth;
 		authService.clearAccessTokenCookie(res);
 		return res.redirect('/');
 	});
-  
-  
+
+
 	AuthController.post('/password/bind', async (req: Request, res: Response) => {
 		try {
 			const { id, username, password, confirmPassword } = req.body as UserPasswordBindDto;
 			const userAuth = await authService.bindPasswordAccount(
-				parseInt(id), 
-				username, 
-				password, 
+				parseInt(id),
+				username,
+				password,
 				confirmPassword,
 			);
 			return res.status(StatusCodes.CREATED).send({
 				message: 'Bind password auth success',
 				data: { username, provider: userAuth.provider },
 			});
-      
+
 		} catch (error) {
 			const appError = createAppError(error, 'Bind password auth failed');
 			logError(req, appError);
@@ -92,13 +92,13 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
+
 
 	AuthController.get('/google', async (req: Request, res: Response) => {
 		try {
 			const oauthUrl = authService.createGoogleOAuthUrl(Env.GOOGLE_REDIRECT_URI!);
 			res.redirect(oauthUrl);
-      
+
 		} catch(error) {
 			const appError = createAppError(error, 'Google login failed');
 			logError(req, appError);
@@ -108,7 +108,7 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
+
 
 	AuthController.get('/google/callback', async (req: Request, res: Response) => {
 		try {
@@ -117,7 +117,7 @@ export function createAuthController(db: Services) {
 			const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
 			authService.setAccessTokenCookie(res, accessToken);
 			return res.redirect('/');
-      
+
 		} catch (error) {
 			const appError = createAppError(error, 'Google authentication failed');
 			logError(req, appError);
@@ -127,17 +127,17 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
-  
+
+
 	AuthController.get('/google-bind', async (req: Request, res: Response) => {
 		try {
 			req.session.oauth = await authService.createOAuthState(req);
 			const oauthUrl = authService.createGoogleOAuthUrl(
-				Env.GOOGLE_BIND_REDIRECT_URI!, 
+				Env.GOOGLE_BIND_REDIRECT_URI!,
 				req.session.oauth.state
 			);
 			res.redirect(oauthUrl);
-    
+
 		} catch(error) {
 			const appError = createAppError(error, 'Google bind account failed');
 			logError(req, appError);
@@ -147,23 +147,23 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
-  
+
+
 	AuthController.get('/google/bind', async (req: Request, res: Response) => {
 		try {
 			const { state } = req.query;
 			const payload = await authService.authorizeGoogle(req, Env.GOOGLE_BIND_REDIRECT_URI!);
 			const authState = authService.verifyOAuthState(req, state as string);
 			const userAuth = await authService.bindGoogleAccount(authState.userId, payload.sub, payload.email!);
-      
+
 			return res.status(StatusCodes.CREATED).send({
 				message: 'Bind google auth success',
-				data: { 
-					providerUserId: userAuth.providerUserId, 
-					provider: userAuth.provider 
+				data: {
+					providerUserId: userAuth.providerUserId,
+					provider: userAuth.provider
 				},
 			});
-      
+
 		} catch (error) {
 			const appError = createAppError(error, 'Bind google auth failed');
 			logError(req, appError);
@@ -201,7 +201,7 @@ export function createAuthController(db: Services) {
 		const oauthUrl = authService.createGithubOAuthUrl(Env.GITHUB_REDIRECT_URI!);
 		res.redirect(oauthUrl);
 	});
-  
+
 
 	AuthController.get('/github/callback', async (req: Request, res: Response) => {
 		try {
@@ -220,17 +220,17 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
+
 
 	AuthController.get('/github-bind', async (req: Request, res: Response) => {
 		try {
 			req.session.oauth = await authService.createOAuthState(req);
 			const oauthUrl = authService.createGithubOAuthUrl(
-				Env.GITHUB_BIND_REDIRECT_URI!, 
+				Env.GITHUB_BIND_REDIRECT_URI!,
 				req.session.oauth.state
 			);
 			res.redirect(oauthUrl);
-    
+
 		} catch(error) {
 			const appError = createAppError(error, 'Github bind account failed');
 			logError(req, appError);
@@ -240,27 +240,27 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
-  
+
+
 	AuthController.get('/github/bind', async (req: Request, res: Response) => {
 		try {
 			const { state } = req.query;
 			const payload = await authService.authorizeGithub(req, Env.GITHUB_BIND_REDIRECT_URI!);
 			const authState = authService.verifyOAuthState(req, state as string);
 			const userAuth = await authService.bindGithubAccount(
-				authState.userId, 
-				String(payload.id), 
+				authState.userId,
+				String(payload.id),
 				payload.login,
 			);
-      
+
 			return res.status(StatusCodes.CREATED).send({
 				message: 'Bind github auth success',
-				data: { 
-					providerUserId: userAuth.providerUserId, 
-					provider: userAuth.provider 
+				data: {
+					providerUserId: userAuth.providerUserId,
+					provider: userAuth.provider
 				},
 			});
-      
+
 		} catch (error) {
 			const appError = createAppError(error, 'Bind github auth failed');
 			logError(req, appError);
@@ -298,7 +298,7 @@ export function createAuthController(db: Services) {
 		const oauthUrl = authService.createDiscordOAuthUrl(Env.DISCORD_REDIRECT_URI!);
 		res.redirect(oauthUrl);
 	});
-  
+
 
 	AuthController.get('/discord/callback', async (req: Request, res: Response) => {
 		try {
@@ -317,17 +317,17 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
-  
+
+
 	AuthController.get('/discord-bind', async (req: Request, res: Response) => {
 		try {
 			req.session.oauth = await authService.createOAuthState(req);
 			const oauthUrl = authService.createDiscordOAuthUrl(
-				Env.DISCORD_BIND_REDIRECT_URI!, 
+				Env.DISCORD_BIND_REDIRECT_URI!,
 				req.session.oauth.state
 			);
 			res.redirect(oauthUrl);
-    
+
 		} catch(error) {
 			const appError = createAppError(error, 'Discord bind account failed');
 			logError(req, appError);
@@ -337,27 +337,27 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
-  
+
+
 	AuthController.get('/discord/bind', async (req: Request, res: Response) => {
 		try {
 			const { state } = req.query;
 			const payload = await authService.authorizeDiscord(req, Env.DISCORD_BIND_REDIRECT_URI!);
 			const authState = authService.verifyOAuthState(req, state as string);
 			const userAuth = await authService.bindDiscordAccount(
-				authState.userId, 
-				String(payload.id), 
+				authState.userId,
+				String(payload.id),
 				payload.username,
 			);
-      
+
 			return res.status(StatusCodes.CREATED).send({
 				message: 'Bind discord auth success',
-				data: { 
-					providerUserId: userAuth.providerUserId, 
-					provider: userAuth.provider 
+				data: {
+					providerUserId: userAuth.providerUserId,
+					provider: userAuth.provider
 				},
 			});
-      
+
 		} catch (error) {
 			const appError = createAppError(error, 'Bind discord auth failed');
 			logError(req, appError);
@@ -395,7 +395,7 @@ export function createAuthController(db: Services) {
 		const oauthUrl = await authService.createMicrosoftOAuthUrl(Env.MICROSOFT_REDIRECT_URI!);
 		res.redirect(oauthUrl);
 	});
-  
+
 
 	AuthController.get('/microsoft/callback', async (req: Request, res: Response) => {
 		try {
@@ -414,17 +414,17 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
-  
+
+
 	AuthController.get('/microsoft-bind', async (req: Request, res: Response) => {
 		try {
 			req.session.oauth = await authService.createOAuthState(req);
 			const oauthUrl = await authService.createMicrosoftOAuthUrl(
-				Env.MICROSOFT_REDIRECT_URI!, 
+				Env.MICROSOFT_REDIRECT_URI!,
 				req.session.oauth.state
 			);
 			res.redirect(oauthUrl);
-    
+
 		} catch(error) {
 			const appError = createAppError(error, 'Microsoft bind account failed');
 			logError(req, appError);
@@ -434,27 +434,27 @@ export function createAuthController(db: Services) {
 			});
 		}
 	});
-  
-  
+
+
 	AuthController.get('/microsoft/bind', async (req: Request, res: Response) => {
 		try {
 			const { state } = req.query;
 			const payload = await authService.authorizeMicrosoft(req, Env.MICROSOFT_BIND_REDIRECT_URI!);
 			const authState = authService.verifyOAuthState(req, state as string);
 			const userAuth = await authService.bindMicrosoftAccount(
-				authState.userId, 
+				authState.userId,
 				String(payload.id),
 				payload.userPrincipalName,
 			);
-      
+
 			return res.status(StatusCodes.CREATED).send({
 				message: 'Bind microsoft auth success',
-				data: { 
-					providerUserId: userAuth.providerUserId, 
-					provider: userAuth.provider 
+				data: {
+					providerUserId: userAuth.providerUserId,
+					provider: userAuth.provider
 				},
 			});
-      
+
 		} catch (error) {
 			const appError = createAppError(error, 'Bind microsoft auth failed');
 			logError(req, appError);
@@ -465,7 +465,7 @@ export function createAuthController(db: Services) {
 		}
 	});
 
-  
+
 	AuthController.post('/microsoft/unbind', async (req: Request, res: Response) => {
 		try {
 			const accessToken = authService.getAccessTokenCookie(req);

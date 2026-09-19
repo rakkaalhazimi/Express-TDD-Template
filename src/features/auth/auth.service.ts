@@ -10,13 +10,13 @@ import jwt from 'jsonwebtoken';
 import { type Services } from "@/db/db.js";
 import Env from '@/env-loader.js';
 import { AppError } from '@/error.js';
-import type { 
-	DiscordUserPayload, 
-	GithubUserPayload, 
-	GoogleUserPayload, 
-	MicrosoftUserPayload, 
-	OAuthBindState, 
-	TokenPayload 
+import type {
+	DiscordUserPayload,
+	GithubUserPayload,
+	GoogleUserPayload,
+	MicrosoftUserPayload,
+	OAuthBindState,
+	TokenPayload
 } from './auth.dto.js';
 import { type IUser } from '@/features/user/entities/User.js';
 import { AuthProvider, type IUserAuth } from '@/features/user/entities/UserAuth.js';
@@ -41,7 +41,7 @@ export class AuthService {
 			},
 		});
 	}
-  
+
 
 	async hashPassword(password: string) {
 		const hash = await bcrypt.hash(password, 10);
@@ -66,7 +66,7 @@ export class AuthService {
 		const isVerified = await this.verifyPassword(password, user.password);
 		if (!isVerified) {
 			throw new AppError({
-				status: StatusCodes.UNAUTHORIZED, 
+				status: StatusCodes.UNAUTHORIZED,
 				message: 'Username or password is incorrect',
 			});
 		}
@@ -80,7 +80,7 @@ export class AuthService {
 			if (!username) missingPiece.push('username');
 			if (!password) missingPiece.push('password');
 			if (!confirmPassword) missingPiece.push('confirmPassword');
-      
+
 			throw new AppError({
 				status: StatusCodes.BAD_REQUEST,
 				message: `Missing required fields`,
@@ -104,7 +104,7 @@ export class AuthService {
 
 		const hashed = await this.hashPassword(password);
 		const newUser = await this.userService.createUser({ username, password: hashed });
-    
+
 		// Create new user auth
 		const userAuth = await this.userService.createUserAuth({
 			user: newUser,
@@ -112,24 +112,24 @@ export class AuthService {
 			providerUserId: newUser.username,
 			displayIdentifier: newUser.username,
 		});
-    
+
 		return userAuth;
 	}
 
 
 	async bindPasswordAccount(
-		userId: number, 
-		username: string, 
-		password: string, 
+		userId: number,
+		username: string,
+		password: string,
 		confirmPassword: string
 	): Promise<IUserAuth> {
-    
+
 		if (!username || !password || !confirmPassword) {
 			const missingPiece = [];
 			if (!username) missingPiece.push('username');
 			if (!password) missingPiece.push('password');
 			if (!confirmPassword) missingPiece.push('confirmPassword');
-      
+
 			throw new AppError({
 				status: StatusCodes.BAD_REQUEST,
 				message: `Missing required fields`,
@@ -142,7 +142,7 @@ export class AuthService {
 				message: 'Passwords do not match',
 			});
 		}
-    
+
 		const user = await this.db.user.findOne({ id: userId });
 		if (!user) {
 			throw new AppError({
@@ -150,10 +150,10 @@ export class AuthService {
 				message: 'User not found',
 			});
 		}
-    
-		const userAuth = await this.db.userAuth.findOne({ 
-			providerUserId: username, 
-			provider: AuthProvider.PASSWORD 
+
+		const userAuth = await this.db.userAuth.findOne({
+			providerUserId: username,
+			provider: AuthProvider.PASSWORD
 		});
 		if (userAuth) {
 			throw new AppError({
@@ -161,24 +161,24 @@ export class AuthService {
 				message: 'User auth already exist',
 			});
 		}
-    
+
 		// Renew username and password
 		const hashed = await this.hashPassword(password);
 		user.username = username;
 		user.password = hashed;
 		await this.db.em.flush();
-    
+
 		const newUserAuth = await this.userService.createUserAuth({
 			user: user,
 			provider: AuthProvider.PASSWORD,
 			providerUserId: username,
 			displayIdentifier: username,
 		});
-    
+
 		return newUserAuth;
 	}
-  
-  
+
+
 	async unbindAccount(providerUserId: string, provider: AuthProvider): Promise<IUserAuth> {
 		const userAuth = await this.db.userAuth.findOne({
 			providerUserId,
@@ -194,8 +194,8 @@ export class AuthService {
 
 		return this.userService.removeUserAuth(Number(userAuth.id));
 	}
-  
-  
+
+
 	createGoogleOAuthUrl(redirectUri: string, state: string = '') {
 		const url = new URL('https://accounts.google.com/o/oauth2/v2/auth');
 		url.search = new URLSearchParams({
@@ -219,8 +219,8 @@ export class AuthService {
 		}).toString();
 		return url.toString();
 	}
-  
-  
+
+
 	createDiscordOAuthUrl(redirectUri: string, state: string = '') {
 		const url = new URL('https://discord.com/oauth2/authorize');
 		url.search = new URLSearchParams({
@@ -232,8 +232,8 @@ export class AuthService {
 		}).toString();
 		return url.toString();
 	}
-  
-  
+
+
 	async createMicrosoftOAuthUrl(redirectUri: string, state: string = '') {
 		return await this.msClient.getAuthCodeUrl({
 			scopes: ['user.read', 'openid', 'profile', 'email'],
@@ -241,8 +241,8 @@ export class AuthService {
 			state
 		});
 	}
-  
-  
+
+
 	async authorizeGoogle(req: Request, redirectUri: string): Promise<GoogleUserPayload> {
 		const { code } = req.query;
 		const authResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -292,14 +292,14 @@ export class AuthService {
 
 		return newUserAuth;
 	}
-  
-  
+
+
 	async bindGoogleAccount(
-		userId: number, 
-		uniqueId: string, 
+		userId: number,
+		uniqueId: string,
 		displayIdentifier: string
 	): Promise<IUserAuth> {
-    
+
 		const user = await this.db.user.findOne({ id: userId });
 		if (!user) {
 			throw new AppError({
@@ -307,7 +307,7 @@ export class AuthService {
 				message: 'User not found'
 			});
 		}
-    
+
 		const userAuth = await this.db.userAuth.findOne({
 			provider: AuthProvider.GOOGLE,
 			providerUserId: uniqueId,
@@ -318,14 +318,14 @@ export class AuthService {
 				message: 'User auth already exist',
 			});
 		}
-    
+
 		const newUserAuth = await this.userService.createUserAuth({
 			user,
 			provider: AuthProvider.GOOGLE,
 			providerUserId: uniqueId,
 			displayIdentifier
 		});
-    
+
 		return newUserAuth;
 	}
 
@@ -406,11 +406,11 @@ export class AuthService {
 
 
 	async bindGithubAccount(
-		userId: number, 
-		uniqueId: string, 
+		userId: number,
+		uniqueId: string,
 		displayIdentifier: string
 	): Promise<IUserAuth> {
-    
+
 		const user = await this.db.user.findOne({ id: userId });
 		if (!user) {
 			throw new AppError({
@@ -418,7 +418,7 @@ export class AuthService {
 				message: 'User not found'
 			});
 		}
-    
+
 		const userAuth = await this.db.userAuth.findOne({
 			provider: AuthProvider.GITHUB,
 			providerUserId: uniqueId,
@@ -429,14 +429,14 @@ export class AuthService {
 				message: 'User auth already exist',
 			});
 		}
-    
+
 		const newUserAuth = await this.userService.createUserAuth({
 			user,
 			provider: AuthProvider.GITHUB,
 			providerUserId: uniqueId,
 			displayIdentifier
 		});
-    
+
 		return newUserAuth;
 	}
 
@@ -458,7 +458,7 @@ export class AuthService {
 
 	async authorizeDiscord(req: Request, redirectUri: string): Promise<DiscordUserPayload> {
 		const { code } = req.query;
-    
+
 		const body = new URLSearchParams({
 			grant_type: 'authorization_code',
 			code: String(code),
@@ -485,7 +485,7 @@ export class AuthService {
 		}
 
 		const userResponse = await fetch('https://discord.com/api/users/@me', {
-			headers: { 
+			headers: {
 				Authorization: `Bearer ${accessToken}`,
 				Accept: 'application/json',
 			}
@@ -494,8 +494,8 @@ export class AuthService {
 		const userJson = await userResponse.json();
 		return userJson;
 	}
-  
-  
+
+
 	async registerByDiscord(uniqueId: string, displayIdentifier: string): Promise<IUserAuth> {
 		const userAuth = await this.db.userAuth.findOne({
 			provider: AuthProvider.DISCORD,
@@ -519,14 +519,14 @@ export class AuthService {
 
 		return newUserAuth;
 	}
-  
-  
+
+
 	async bindDiscordAccount(
-		userId: number, 
-		uniqueId: string, 
+		userId: number,
+		uniqueId: string,
 		displayIdentifier: string
 	): Promise<IUserAuth> {
-    
+
 		const user = await this.db.user.findOne({ id: userId });
 		if (!user) {
 			throw new AppError({
@@ -534,7 +534,7 @@ export class AuthService {
 				message: 'User not found'
 			});
 		}
-    
+
 		const userAuth = await this.db.userAuth.findOne({
 			provider: AuthProvider.DISCORD,
 			providerUserId: uniqueId,
@@ -545,18 +545,18 @@ export class AuthService {
 				message: 'User auth already exist',
 			});
 		}
-    
+
 		const newUserAuth = await this.userService.createUserAuth({
 			user,
 			provider: AuthProvider.DISCORD,
 			providerUserId: uniqueId,
 			displayIdentifier
 		});
-    
+
 		return newUserAuth;
 	}
-  
-  
+
+
 	async unbindDiscordAccount(userId: number): Promise<IUserAuth> {
 		const boundAuth = await this.db.userAuth.findOne({
 			user: userId,
@@ -570,11 +570,11 @@ export class AuthService {
 		}
 		return this.unbindAccount(boundAuth.providerUserId, AuthProvider.DISCORD);
 	}
-  
-  
+
+
 	async authorizeMicrosoft(req: Request, redirectUri: string): Promise<MicrosoftUserPayload> {
 		const { code } = req.query;
-    
+
 		const tokenResponse = await this.msClient.acquireTokenByCode({
 			code: String(code),
 			scopes: ['user.read', 'openid', 'profile', 'email'],
@@ -621,14 +621,14 @@ export class AuthService {
 
 		return newUserAuth;
 	}
-  
-  
+
+
 	async bindMicrosoftAccount(
-		userId: number, 
-		uniqueId: string, 
+		userId: number,
+		uniqueId: string,
 		displayIdentifier: string
 	): Promise<IUserAuth> {
-    
+
 		const user = await this.db.user.findOne({ id: userId });
 		if (!user) {
 			throw new AppError({
@@ -636,7 +636,7 @@ export class AuthService {
 				message: 'User not found'
 			});
 		}
-    
+
 		const userAuth = await this.db.userAuth.findOne({
 			provider: AuthProvider.MICROSOFT,
 			providerUserId: uniqueId,
@@ -647,18 +647,18 @@ export class AuthService {
 				message: 'User auth already exist',
 			});
 		}
-    
+
 		const newUserAuth = await this.userService.createUserAuth({
 			user,
 			provider: AuthProvider.MICROSOFT,
 			providerUserId: uniqueId,
 			displayIdentifier
 		});
-    
+
 		return newUserAuth;
 	}
-  
-  
+
+
 	async unbindMicrosoftAccount(userId: number): Promise<IUserAuth> {
 		const boundAuth = await this.db.userAuth.findOne({
 			user: userId,
@@ -672,21 +672,21 @@ export class AuthService {
 		}
 		return this.unbindAccount(boundAuth.providerUserId, AuthProvider.MICROSOFT);
 	}
-  
-  
+
+
 	createJWT(user: IUser) {
 		const payload: TokenPayload = { user_id: Number(user.id) };
 		const token = jwt.sign(payload, Env.SECRET!, { expiresIn: '1h' });
 		return token;
 	}
-  
-  
+
+
 	async verifyJWT(token: string): Promise<TokenPayload> {
 		const decoded = jwt.verify(token, Env.SECRET!);
 		return decoded as TokenPayload;
 	}
-  
-  
+
+
 	async genereateUserToken(id: number): Promise<string> {
 		const user = await this.db.user.findOne({ id });
 		if (!user) {
@@ -698,21 +698,21 @@ export class AuthService {
 		const accessToken = this.createJWT(user);
 		return accessToken;
 	}
-  
-  
+
+
 	getAccessTokenCookie(req: Request) {
 		return req.cookies.access_token;
 	}
-  
+
 	setAccessTokenCookie(res: Response, token: string) {
 		res.cookie('access_token', token);
 	}
-  
+
 	clearAccessTokenCookie(res: Response) {
 		res.clearCookie('access_token');
 	}
-  
-  
+
+
 	async createOAuthState(req: Request): Promise<OAuthBindState> {
 		// const authHeader = req.headers['authorization'];
 		// const token = authHeader && authHeader.split(' ')[1];
@@ -723,8 +723,8 @@ export class AuthService {
 			userId: decoded.user_id,
 		};
 	}
-  
-  
+
+
 	verifyOAuthState(req: Request, state: string): OAuthBindState {
 		if (!req.session.oauth) {
 			throw new AppError({

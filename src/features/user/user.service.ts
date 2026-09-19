@@ -40,7 +40,7 @@ export class UserService {
 		await this.db.em.flush();
 		return newUser;
 	}
-  
+
 	async createUserAuth(userAuth: RequiredEntityData<IUserAuth>): Promise<IUserAuth> {
 		const newUserAuth = this.db.em.create(UserAuthSchema, userAuth);
 		await this.db.em.flush();

@@ -15,20 +15,20 @@ export const UserAuthSchema = defineEntity({
 	name: 'UserAuth',
 	properties: {
 		id: p.bigint().primary(),
-    
+
 		user: () => p
 			.manyToOne(UserSchema)
 			.nullable()
 			.cascade(Cascade.PERSIST),
-      
+
 		provider: p.enum(AuthProvider),
 		providerUserId: p.string(),
 		displayIdentifier: p.string(),
-    
+
 		createdAt: p
 			.datetime()
 			.onCreate(() => new Date()),
-      
+
 		updatedAt: p
 			.datetime()
 			.onCreate(() => new Date())
