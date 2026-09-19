@@ -111,7 +111,7 @@ describe('Microsoft Auth API - Bind', () => {
 	const validUser = {
 		username: "test",
 		password: "test",
-		confirmPassword: "test"
+		confirmPassword: "test",
 	};
 
 	const oauthState = {
@@ -186,7 +186,7 @@ describe('Microsoft Auth API - Unbind', () => {
 	const validUser = {
 		username: "test",
 		password: "test",
-		confirmPassword: "test"
+		confirmPassword: "test",
 	};
 
 	test.afterEach(async ({ clearDatabaseRow }) => {

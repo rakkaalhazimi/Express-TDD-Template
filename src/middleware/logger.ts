@@ -38,7 +38,7 @@ const {
 	timestamp,
 	colorize,
 	printf,
-	errors
+	errors,
 } = winston.format;
 
 

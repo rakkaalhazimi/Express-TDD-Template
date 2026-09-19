@@ -15,7 +15,7 @@ export function createUserController(db: Services) {
 		const user = await userService.createUser(req.body);
 		res.status(StatusCodes.OK).send({
 			message: 'Create user success',
-			data: { username: user.username }
+			data: { username: user.username },
 		});
 	});
 

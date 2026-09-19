@@ -10,19 +10,19 @@ import { AuthProvider } from "@/features/user/entities/UserAuth.js";
 const validUser = {
 	username: "test",
 	password: "test",
-	confirmPassword: "test"
+	confirmPassword: "test",
 };
 
 const invalidUser = {
 	username: "wrong-user",
 	password: "wrong-pass",
-	confirmPassword: "wrong-pass"
+	confirmPassword: "wrong-pass",
 };
 
 const newUser = {
 	username: "new-user",
 	password: "new-pass",
-	confirmPassword: "new-pass"
+	confirmPassword: "new-pass",
 };
 
 
@@ -51,7 +51,7 @@ describe('Password Auth API - Login/Register', () => {
 		await authService.register(
 			validUser.username,
 			validUser.password,
-			validUser.confirmPassword
+			validUser.confirmPassword,
 		);
 	});
 
@@ -66,7 +66,7 @@ describe('Password Auth API - Login/Register', () => {
 			.post('/api/v1/auth/login')
 			.send({
 				username: invalidUser.username,
-				password: validUser.password
+				password: validUser.password,
 			});
 		expect(res.status).toEqual(404);
 	});
@@ -77,7 +77,7 @@ describe('Password Auth API - Login/Register', () => {
 			.post('/api/v1/auth/login')
 			.send({
 				username: validUser.username,
-				password: invalidUser.password
+				password: invalidUser.password,
 			});
 		expect(res.status).toEqual(401);
 	});
@@ -105,7 +105,7 @@ describe('Password Auth API - Login/Register', () => {
 			.send({
 				username: newUser.username,
 				password: newUser.password,
-				confirmPassword: invalidUser.confirmPassword
+				confirmPassword: invalidUser.confirmPassword,
 			});
 		expect(res.status).equal(400);
 	});
@@ -161,7 +161,7 @@ describe('Password Auth API - Bind', () => {
 		const userAuth = await authService.register(
 			validUser.username,
 			validUser.password,
-			validUser.confirmPassword
+			validUser.confirmPassword,
 		);
 		const userId = Number(userAuth!.user!.id);
 

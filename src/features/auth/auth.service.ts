@@ -16,7 +16,7 @@ import type {
 	GoogleUserPayload,
 	MicrosoftUserPayload,
 	OAuthBindState,
-	TokenPayload
+	TokenPayload,
 } from './auth.dto.js';
 import { type IUser } from '@/features/user/entities/User.js';
 import { AuthProvider, type IUserAuth } from '@/features/user/entities/UserAuth.js';
@@ -121,7 +121,7 @@ export class AuthService {
 		userId: number,
 		username: string,
 		password: string,
-		confirmPassword: string
+		confirmPassword: string,
 	): Promise<IUserAuth> {
 
 		if (!username || !password || !confirmPassword) {
@@ -153,7 +153,7 @@ export class AuthService {
 
 		const userAuth = await this.db.userAuth.findOne({
 			providerUserId: username,
-			provider: AuthProvider.PASSWORD
+			provider: AuthProvider.PASSWORD,
 		});
 		if (userAuth) {
 			throw new AppError({
@@ -238,7 +238,7 @@ export class AuthService {
 		return await this.msClient.getAuthCodeUrl({
 			scopes: ['user.read', 'openid', 'profile', 'email'],
 			redirectUri: redirectUri,
-			state
+			state,
 		});
 	}
 
@@ -248,7 +248,7 @@ export class AuthService {
 		const authResponse = await fetch('https://oauth2.googleapis.com/token', {
 			method: 'POST',
 			headers: {
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
 			},
 			body: JSON.stringify({
 				client_id: Env.GOOGLE_CLIENT_ID,
@@ -256,13 +256,13 @@ export class AuthService {
 				code,
 				redirect_uri: redirectUri,
 				grant_type: 'authorization_code',
-			})
+			}),
 		});
 
 		const { id_token } = await authResponse.json();
 		const ticket = await this.client.verifyIdToken({
 			idToken: id_token,
-			audience: Env.GOOGLE_CLIENT_ID!
+			audience: Env.GOOGLE_CLIENT_ID!,
 		});
 		const payload = ticket.getPayload()!;
 		return payload as GoogleUserPayload;
@@ -297,14 +297,14 @@ export class AuthService {
 	async bindGoogleAccount(
 		userId: number,
 		uniqueId: string,
-		displayIdentifier: string
+		displayIdentifier: string,
 	): Promise<IUserAuth> {
 
 		const user = await this.db.user.findOne({ id: userId });
 		if (!user) {
 			throw new AppError({
 				status: StatusCodes.NOT_FOUND,
-				message: 'User not found'
+				message: 'User not found',
 			});
 		}
 
@@ -323,7 +323,7 @@ export class AuthService {
 			user,
 			provider: AuthProvider.GOOGLE,
 			providerUserId: uniqueId,
-			displayIdentifier
+			displayIdentifier,
 		});
 
 		return newUserAuth;
@@ -351,14 +351,14 @@ export class AuthService {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'Accept': 'application/json'
+				'Accept': 'application/json',
 			},
 			body: JSON.stringify({
 				client_id: Env.GITHUB_CLIENT_ID,
 				client_secret: Env.GITHUB_CLIENT_SECRET,
 				code,
 				redirect_uri: redirectUri,
-			})
+			}),
 		});
 
 		const tokenJson = await tokenResponse.json();
@@ -371,8 +371,8 @@ export class AuthService {
 			headers: {
 				'Authorization': `token ${accessToken}`,
 				'Accept': 'application/vnd.github+json',
-				'User-Agent': 'express-js-tdd'
-			}
+				'User-Agent': 'express-js-tdd',
+			},
 		});
 
 		const userJson = await userResponse.json();
@@ -408,14 +408,14 @@ export class AuthService {
 	async bindGithubAccount(
 		userId: number,
 		uniqueId: string,
-		displayIdentifier: string
+		displayIdentifier: string,
 	): Promise<IUserAuth> {
 
 		const user = await this.db.user.findOne({ id: userId });
 		if (!user) {
 			throw new AppError({
 				status: StatusCodes.NOT_FOUND,
-				message: 'User not found'
+				message: 'User not found',
 			});
 		}
 
@@ -434,7 +434,7 @@ export class AuthService {
 			user,
 			provider: AuthProvider.GITHUB,
 			providerUserId: uniqueId,
-			displayIdentifier
+			displayIdentifier,
 		});
 
 		return newUserAuth;
@@ -475,7 +475,7 @@ export class AuthService {
 				Authorization: `Basic ${credential}`,
 				'Content-Type': 'application/x-www-form-urlencoded',
 			},
-			body: body
+			body: body,
 		});
 
 		const tokenJson = await tokenResponse.json();
@@ -488,7 +488,7 @@ export class AuthService {
 			headers: {
 				Authorization: `Bearer ${accessToken}`,
 				Accept: 'application/json',
-			}
+			},
 		});
 
 		const userJson = await userResponse.json();
@@ -524,14 +524,14 @@ export class AuthService {
 	async bindDiscordAccount(
 		userId: number,
 		uniqueId: string,
-		displayIdentifier: string
+		displayIdentifier: string,
 	): Promise<IUserAuth> {
 
 		const user = await this.db.user.findOne({ id: userId });
 		if (!user) {
 			throw new AppError({
 				status: StatusCodes.NOT_FOUND,
-				message: 'User not found'
+				message: 'User not found',
 			});
 		}
 
@@ -550,7 +550,7 @@ export class AuthService {
 			user,
 			provider: AuthProvider.DISCORD,
 			providerUserId: uniqueId,
-			displayIdentifier
+			displayIdentifier,
 		});
 
 		return newUserAuth;
@@ -590,7 +590,7 @@ export class AuthService {
 			headers: {
 				'Authorization': `Bearer ${accessToken}`,
 				'Accept': 'application/json',
-			}
+			},
 		});
 
 		const userJson = await userResponse.json();
@@ -626,14 +626,14 @@ export class AuthService {
 	async bindMicrosoftAccount(
 		userId: number,
 		uniqueId: string,
-		displayIdentifier: string
+		displayIdentifier: string,
 	): Promise<IUserAuth> {
 
 		const user = await this.db.user.findOne({ id: userId });
 		if (!user) {
 			throw new AppError({
 				status: StatusCodes.NOT_FOUND,
-				message: 'User not found'
+				message: 'User not found',
 			});
 		}
 
@@ -652,7 +652,7 @@ export class AuthService {
 			user,
 			provider: AuthProvider.MICROSOFT,
 			providerUserId: uniqueId,
-			displayIdentifier
+			displayIdentifier,
 		});
 
 		return newUserAuth;

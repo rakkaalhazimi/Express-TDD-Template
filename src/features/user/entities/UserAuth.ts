@@ -36,7 +36,7 @@ export const UserAuthSchema = defineEntity({
 	},
 	uniques: [
 		{ properties: ['provider', 'providerUserId'] },
-	]
+	],
 });
 
 export type IUserAuth = InferEntity<typeof UserAuthSchema>;

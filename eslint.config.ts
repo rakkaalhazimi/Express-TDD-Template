@@ -14,8 +14,9 @@ export default defineConfig([
 		languageOptions: { globals: globals.node },
 		rules: {
 			"@stylistic/semi": ["error", "always"],
+			"@stylistic/comma-dangle": ["error", "always-multiline"],
 			"@stylistic/indent": ["error", "tab", { tabLength: 2, SwitchCase: 1 }],
-			"@stylistic/no-trailing-spaces": "error"
+			"@stylistic/no-trailing-spaces": "error",
 		},
 	},
 ]);

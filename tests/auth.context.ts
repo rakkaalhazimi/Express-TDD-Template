@@ -35,5 +35,5 @@ export const test = baseTest
 				truncate: true,
 				clearIdentityMap: true,
 			});
-		}
+		},
 	);

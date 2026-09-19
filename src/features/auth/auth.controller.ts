@@ -5,7 +5,7 @@ import { StatusCodes } from 'http-status-codes';
 import type {
 	UserLoginDto,
 	UserPasswordBindDto,
-	UserRegistrationDto
+	UserRegistrationDto,
 } from './auth.dto.js';
 import { createAuthService } from './auth.service.js';
 import type { Services } from '@/db/db.js';
@@ -134,7 +134,7 @@ export function createAuthController(db: Services) {
 			req.session.oauth = await authService.createOAuthState(req);
 			const oauthUrl = authService.createGoogleOAuthUrl(
 				Env.GOOGLE_BIND_REDIRECT_URI!,
-				req.session.oauth.state
+				req.session.oauth.state,
 			);
 			res.redirect(oauthUrl);
 
@@ -160,7 +160,7 @@ export function createAuthController(db: Services) {
 				message: 'Bind google auth success',
 				data: {
 					providerUserId: userAuth.providerUserId,
-					provider: userAuth.provider
+					provider: userAuth.provider,
 				},
 			});
 
@@ -227,7 +227,7 @@ export function createAuthController(db: Services) {
 			req.session.oauth = await authService.createOAuthState(req);
 			const oauthUrl = authService.createGithubOAuthUrl(
 				Env.GITHUB_BIND_REDIRECT_URI!,
-				req.session.oauth.state
+				req.session.oauth.state,
 			);
 			res.redirect(oauthUrl);
 
@@ -257,7 +257,7 @@ export function createAuthController(db: Services) {
 				message: 'Bind github auth success',
 				data: {
 					providerUserId: userAuth.providerUserId,
-					provider: userAuth.provider
+					provider: userAuth.provider,
 				},
 			});
 
@@ -324,7 +324,7 @@ export function createAuthController(db: Services) {
 			req.session.oauth = await authService.createOAuthState(req);
 			const oauthUrl = authService.createDiscordOAuthUrl(
 				Env.DISCORD_BIND_REDIRECT_URI!,
-				req.session.oauth.state
+				req.session.oauth.state,
 			);
 			res.redirect(oauthUrl);
 
@@ -354,7 +354,7 @@ export function createAuthController(db: Services) {
 				message: 'Bind discord auth success',
 				data: {
 					providerUserId: userAuth.providerUserId,
-					provider: userAuth.provider
+					provider: userAuth.provider,
 				},
 			});
 
@@ -421,7 +421,7 @@ export function createAuthController(db: Services) {
 			req.session.oauth = await authService.createOAuthState(req);
 			const oauthUrl = await authService.createMicrosoftOAuthUrl(
 				Env.MICROSOFT_REDIRECT_URI!,
-				req.session.oauth.state
+				req.session.oauth.state,
 			);
 			res.redirect(oauthUrl);
 
@@ -451,7 +451,7 @@ export function createAuthController(db: Services) {
 				message: 'Bind microsoft auth success',
 				data: {
 					providerUserId: userAuth.providerUserId,
-					provider: userAuth.provider
+					provider: userAuth.provider,
 				},
 			});
 

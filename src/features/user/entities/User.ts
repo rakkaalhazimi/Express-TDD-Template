@@ -17,7 +17,7 @@ export const UserSchema = defineEntity({
 			.onCreate(() => new Date())
 			.onUpdate(() => new Date()),
 
-		deletedAt: p.datetime().nullable()
+		deletedAt: p.datetime().nullable(),
 	},
 });
 
