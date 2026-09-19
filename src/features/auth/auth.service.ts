@@ -10,7 +10,14 @@ import jwt from 'jsonwebtoken';
 import { type Services } from "@/db/db.js";
 import Env from '@/env-loader.js';
 import { AppError } from '@/error.js';
-import type { OAuthBindState, TokenPayload } from './auth.dto.js';
+import type { 
+	DiscordUserPayload, 
+	GithubUserPayload, 
+	GoogleUserPayload, 
+	MicrosoftUserPayload, 
+	OAuthBindState, 
+	TokenPayload 
+} from './auth.dto.js';
 import { type IUser } from '@/features/user/entities/User.js';
 import { AuthProvider, type IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';
@@ -236,7 +243,7 @@ export class AuthService {
 	}
   
   
-	async authorizeGoogle(req: Request, redirectUri: string) {
+	async authorizeGoogle(req: Request, redirectUri: string): Promise<GoogleUserPayload> {
 		const { code } = req.query;
 		const authResponse = await fetch('https://oauth2.googleapis.com/token', {
 			method: 'POST',
@@ -258,7 +265,7 @@ export class AuthService {
 			audience: Env.GOOGLE_CLIENT_ID!
 		});
 		const payload = ticket.getPayload()!;
-		return payload;
+		return payload as GoogleUserPayload;
 	}
 
 
@@ -338,7 +345,7 @@ export class AuthService {
 	}
 
 
-	async authorizeGithub(req: Request, redirectUri: string) {
+	async authorizeGithub(req: Request, redirectUri: string): Promise<GithubUserPayload> {
 		const { code } = req.query;
 		const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
 			method: 'POST',
@@ -449,7 +456,7 @@ export class AuthService {
 	}
 
 
-	async authorizeDiscord(req: Request, redirectUri: string) {
+	async authorizeDiscord(req: Request, redirectUri: string): Promise<DiscordUserPayload> {
 		const { code } = req.query;
     
 		const body = new URLSearchParams({
@@ -565,7 +572,7 @@ export class AuthService {
 	}
   
   
-	async authorizeMicrosoft(req: Request, redirectUri: string) {
+	async authorizeMicrosoft(req: Request, redirectUri: string): Promise<MicrosoftUserPayload> {
 		const { code } = req.query;
     
 		const tokenResponse = await this.msClient.acquireTokenByCode({
