@@ -1,6 +1,20 @@
+import type { AppError, ErrorDetail } from './error.js';
+
+
+
 export interface ServerResponse<T = unknown> {
 	message: string,
 	data: T,
-	error?: string,
-	status: number
+	error?: ErrorDetail,
+};
+
+
+export function createErrorResponse(error: AppError): ServerResponse {
+	return {
+		message: error.message,
+		data: null,
+		error: {
+			id: error.errorId,
+		},
+	};
 };

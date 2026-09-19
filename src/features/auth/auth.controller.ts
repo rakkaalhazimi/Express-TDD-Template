@@ -12,6 +12,7 @@ import type { Services } from '@/db/db.js';
 import Env from '@/env-loader.js';
 import { createAppError } from '@/error.js';
 import { logError } from '@/middleware/logger.js';
+import { createErrorResponse } from '@/response.js';
 
 
 
@@ -34,10 +35,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Login failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -54,10 +53,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Register failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -86,10 +83,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Bind password auth failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -102,10 +97,8 @@ export function createAuthController(db: Services) {
 		} catch(error) {
 			const appError = createAppError(error, 'Google login failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -121,10 +114,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Google authentication failed');
 			logError(req, appError);
-			return res.status(appError.status).send({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -141,10 +132,8 @@ export function createAuthController(db: Services) {
 		} catch(error) {
 			const appError = createAppError(error, 'Google bind account failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -167,10 +156,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Bind google auth failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -189,10 +176,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Unbind google auth failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -214,10 +199,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Github authentication failed');
 			logError(req, appError);
-			return res.status(appError.status).send({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -234,10 +217,8 @@ export function createAuthController(db: Services) {
 		} catch(error) {
 			const appError = createAppError(error, 'Github bind account failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -264,10 +245,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Bind github auth failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -286,10 +265,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Unbind github auth failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -311,10 +288,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Discord authentication failed');
 			logError(req, appError);
-			return res.status(appError.status).send({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -331,10 +306,8 @@ export function createAuthController(db: Services) {
 		} catch(error) {
 			const appError = createAppError(error, 'Discord bind account failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -361,10 +334,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Bind discord auth failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -383,10 +354,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Unbind discord auth failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -408,10 +377,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Microsoft authentication failed');
 			logError(req, appError);
-			return res.status(appError.status).send({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -428,10 +395,8 @@ export function createAuthController(db: Services) {
 		} catch(error) {
 			const appError = createAppError(error, 'Microsoft bind account failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -458,10 +423,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Bind microsoft auth failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 
@@ -480,10 +443,8 @@ export function createAuthController(db: Services) {
 		} catch (error) {
 			const appError = createAppError(error, 'Unbind microsoft auth failed');
 			logError(req, appError);
-			return res.status(appError.status).json({
-				message: appError.message,
-				data: null,
-			});
+			const errorResponse = createErrorResponse(appError);
+			return res.status(appError.status).json(errorResponse);
 		}
 	});
 

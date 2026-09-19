@@ -3,6 +3,9 @@ import { randomUUID } from 'node:crypto';
 import { StatusCodes } from 'http-status-codes';
 
 
+export interface ErrorDetail {
+	id: string;
+}
 
 interface AppErrorOptions {
 	status: number;
