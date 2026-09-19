@@ -196,7 +196,7 @@
                     <button class="btn" type="button" onclick="this.closest('.bind-form').classList.remove('open')">Cancel</button>
                   </div>
                 </div>
-              <% } else if (provider.id === 'google' || provider.id === 'github') { %>
+              <% } else if (provider.id === 'google' || provider.id === 'github' || provider.id === 'discord' || provider.id === 'microsoft') { %>
                 <a class="btn" href="/api/v1/auth/<%= provider.id %>-bind">Bind with <%= provider.label %></a>
               <% } else { %>
                 <button class="btn" type="button" title="Not implemented yet" onclick="alert('<%= provider.label %> bind is not implemented yet')">Bind with <%= provider.label %></button>
