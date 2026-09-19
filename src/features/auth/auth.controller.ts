@@ -200,7 +200,7 @@ export function createAuthController(db: Services) {
 	AuthController.get('/github/callback', async (req: Request, res: Response) => {
 		try {
 			const payload = await authService.authorizeGithub(req, Env.GITHUB_REDIRECT_URI!);
-			const userAuth = await authService.registerByGithub(String(payload.id), payload.email || payload.login);
+			const userAuth = await authService.registerByGithub(String(payload.id), payload.login);
 			const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
 			authService.setAccessTokenCookie(res, accessToken);
 			return res.redirect('/');
@@ -244,7 +244,7 @@ export function createAuthController(db: Services) {
 			const userAuth = await authService.bindGithubAccount(
 				authState.userId, 
 				String(payload.id), 
-				payload.email || payload.login,
+				payload.login,
 			);
       
 			return res.status(StatusCodes.CREATED).send({
