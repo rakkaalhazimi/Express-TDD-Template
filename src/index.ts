@@ -30,7 +30,7 @@ export async function createApp(db: Services) {
 	app.use(express.json());                                 // Parse json data from response
 	app.use(cookieParser());                                 // Parse cookies from request header
 	app.use(expressSession({
-		secret: 'secret',
+		secret: Env.SECRET!,
 		resave: false,
 		saveUninitialized: false,
 	}));
