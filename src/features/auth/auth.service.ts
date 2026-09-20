@@ -682,8 +682,23 @@ export class AuthService {
 
 
 	async verifyJWT(token: string): Promise<TokenPayload> {
-		const decoded = jwt.verify(token, Env.SECRET!);
-		return decoded as TokenPayload;
+		try {
+			const decoded = jwt.verify(token, Env.SECRET!);
+			return decoded as TokenPayload;
+		} catch(error) {
+			if (
+				error instanceof jwt.TokenExpiredError
+				|| error instanceof jwt.JsonWebTokenError
+				|| error instanceof jwt.NotBeforeError
+			) {
+				throw new AppError({
+					status: StatusCodes.UNAUTHORIZED,
+					message: error.message,
+					cause: error,
+				});
+			}
+			throw error;
+		}
 	}
 
 
