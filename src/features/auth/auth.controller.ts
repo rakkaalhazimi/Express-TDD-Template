@@ -388,7 +388,7 @@ export function createAuthController(db: Services) {
 		try {
 			req.session.oauth = await authService.createOAuthState(req);
 			const oauthUrl = await authService.createMicrosoftOAuthUrl(
-				Env.MICROSOFT_REDIRECT_URI!,
+				Env.MICROSOFT_BIND_REDIRECT_URI!,
 				req.session.oauth.state,
 			);
 			res.redirect(oauthUrl);
