@@ -4,7 +4,6 @@ import { StatusCodes } from 'http-status-codes';
 
 import type {
 	UserLoginDto,
-	UserPasswordBindDto,
 	UserRegistrationDto,
 } from './auth.dto.js';
 import { createAuthService } from './auth.service.js';
@@ -68,9 +67,11 @@ export function createAuthController(db: Services) {
 
 	AuthController.post('/password/bind', async (req: Request, res: Response) => {
 		try {
-			const { id, username, password, confirmPassword } = req.body as UserPasswordBindDto;
+			const accessToken = authService.getAccessTokenCookie(req);
+			const decoded = await authService.verifyJWT(accessToken);
+			const { username, password, confirmPassword } = req.body as UserRegistrationDto;
 			const userAuth = await authService.bindPasswordAccount(
-				parseInt(id),
+				decoded.user_id,
 				username,
 				password,
 				confirmPassword,

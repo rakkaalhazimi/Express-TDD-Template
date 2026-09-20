@@ -141,10 +141,13 @@ describe('Password Auth API - Bind', () => {
 	});
 
 
-	test('Bind password account', async ({ app, db }) => {
+	test('Bind password account', async ({ app, db, authService }) => {
+		const user = await db.user.findOne({ id: newUserGoogle.id });
+		const accessToken = authService.createJWT(user!);
 		const res = await request(app)
 			.post('/api/v1/auth/password/bind')
-			.send({...newUser, id: newUserGoogle.id});  // Register with account made from google
+			.set('Cookie', `access_token=${accessToken}`)
+			.send(newUser);  // Register with account made from google
 
 		const userAuth = await db.userAuth.findOne({
 			providerUserId: newUser.username,
@@ -163,11 +166,12 @@ describe('Password Auth API - Bind', () => {
 			validUser.password,
 			validUser.confirmPassword,
 		);
-		const userId = Number(userAuth!.user!.id);
+		const accessToken = authService.createJWT(userAuth.user!);
 
 		const res = await request(app)
 			.post('/api/v1/auth/password/bind')
-			.send({...validUser, id: userId});
+			.set('Cookie', `access_token=${accessToken}`)
+			.send(validUser);
 
 		const foundUserAuth = await db.userAuth.find({
 			providerUserId: validUser.username,

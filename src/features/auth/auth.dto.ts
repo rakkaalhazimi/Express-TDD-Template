@@ -38,7 +38,3 @@ export interface UserRegistrationDto {
 	password: string;
 	confirmPassword: string;
 }
-
-export interface UserPasswordBindDto extends UserRegistrationDto {
-	id: string;
-}
