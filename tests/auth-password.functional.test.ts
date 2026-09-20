@@ -182,3 +182,66 @@ describe('Password Auth API - Bind', () => {
 		expect(res.status).equal(409);
 	});
 });
+
+
+describe('Password Auth API - Bind', () => {
+	const newUserGoogle = {
+		id: 0,
+		uniqueId: '123456-google',
+		displayIdentifier: 'test-express-tdd',
+	};
+	const newUserHacker = {
+		id: 0,
+		uniqueId: '123456-hacker',
+		displayIdentifier: 'test-hacker-tdd',
+	};
+
+	test.beforeEach(async ({ authService }) => {
+		const gUserAuth = await authService.registerByGoogle(
+			newUserGoogle.uniqueId, newUserGoogle.displayIdentifier);
+		newUserGoogle.id = Number(gUserAuth.user!.id);
+	});
+
+
+	test.afterEach(async ({ clearDatabaseRow }) => {
+		await clearDatabaseRow();
+	});
+
+
+	test('Bind password account takeover without JWT token', async ({ app }) => {
+		const res = await request(app)
+			.post('/api/v1/auth/password/bind')
+			.send({...newUser, id: newUserHacker.id});  // Register with account made from google
+		expect(res.status).toBe(401);
+	});
+
+
+	test('Bind password account cannot target another user', async ({ app, db, authService }) => {
+		const victim = await db.user.findOne({ id: newUserGoogle.id });
+		const originalUsername = victim!.username;
+		const originalPassword = victim!.password;
+
+		const hackerUserAuth = await authService.registerByGoogle(
+			newUserHacker.uniqueId, newUserHacker.displayIdentifier);
+		newUserHacker.id = Number(hackerUserAuth.user!.id);
+		const accessToken = authService.createJWT(hackerUserAuth.user!);
+
+		const res = await request(app)
+			.post('/api/v1/auth/password/bind')
+			.set('Cookie', `access_token=${accessToken}`)
+			.send({ ...newUser, id: newUserGoogle.id }); // forging victim id
+
+		// Bind succeeds, but applies to the HACKER's own account, not the forged victim id
+		expect(res.status).equal(201);
+
+		const victimAfter = await db.user.findOne({ id: newUserGoogle.id });
+		expect(victimAfter!.username).toBe(originalUsername);
+		expect(victimAfter!.password).toBe(originalPassword);
+
+		const boundAuth = await db.userAuth.findOne({
+			providerUserId: newUser.username,
+			provider: AuthProvider.PASSWORD,
+		}, { populate: ['user'] });
+		expect(Number(boundAuth?.user!.id)).toBe(newUserHacker.id);
+	});
+});
