@@ -33,6 +33,10 @@ export async function createApp(db: Services) {
 		secret: Env.SECRET!,
 		resave: false,
 		saveUninitialized: false,
+		cookie: {
+			httpOnly: true,
+			sameSite: true,
+		},
 	}));
 	app.use(expressContext.default());
 	app.use(LoggerMiddleware);
