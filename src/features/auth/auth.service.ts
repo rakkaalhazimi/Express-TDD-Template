@@ -701,6 +701,12 @@ export class AuthService {
 
 
 	getAccessTokenCookie(req: Request) {
+		if (!req.cookies.access_token) {
+			throw new AppError({
+				status: StatusCodes.UNAUTHORIZED,
+				message: `Access Token isn't found`,
+			});
+		}
 		return req.cookies.access_token;
 	}
 
