@@ -12,7 +12,7 @@ export function createUserController(db: Services) {
   const userService = createUserService(db);
 
 
-  UserController.post('/create', async (req: Request, res: Response) => {
+  UserController.post('/create', JWTGuardMiddleware, async (req: Request, res: Response) => {
     const user = await userService.createUser(req.body);
     res.status(StatusCodes.OK).send({
       message: 'Create user success',
