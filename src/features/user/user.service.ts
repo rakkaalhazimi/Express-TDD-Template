@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 
 import bcrypt from 'bcrypt';
-import type { RequiredEntityData } from '@mikro-orm/core';
+import { serialize, type RequiredEntityData } from '@mikro-orm/core';
 import { StatusCodes } from 'http-status-codes';
 
 import type { Services } from '@/db/db.js';
@@ -45,6 +45,18 @@ export class UserService {
     const newUserAuth = this.db.em.create(UserAuthSchema, userAuth);
     await this.db.em.flush();
     return newUserAuth;
+  }
+
+  async findUserById(id: number): Promise<IUser> {
+    const user = await this.db.user.findOne({ id });
+    console.log('EM id: ', this.db.em.id);
+    if (!user) {
+      throw new AppError({
+        status: StatusCodes.NOT_FOUND,
+        message: 'User is not found',
+      });
+    }
+    return serialize(user);
   }
 
   async removeUserAuth(id: number): Promise<IUserAuth> {
