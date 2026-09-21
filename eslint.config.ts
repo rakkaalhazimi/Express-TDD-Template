@@ -13,6 +13,7 @@ export default defineConfig([
 		files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
 		languageOptions: { globals: globals.node },
 		rules: {
+			"@typescript-eslint/no-unused-vars": "warn",
 			"@stylistic/semi": ["error", "always"],
 			"@stylistic/comma-dangle": ["error", "always-multiline"],
 			"@stylistic/indent": ["error", "tab", { tabLength: 2, SwitchCase: 1 }],
