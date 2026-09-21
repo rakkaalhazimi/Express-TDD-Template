@@ -49,7 +49,7 @@ export function forkDB(db: Services) {
   const em = db.em.fork();
   return {
     orm: db.orm,
-    em: db.em.fork(),
+    em: em,
     user: em.getRepository(UserSchema),
     userAuth: em.getRepository(UserAuthSchema),
   };
