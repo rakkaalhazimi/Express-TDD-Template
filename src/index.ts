@@ -14,6 +14,7 @@ import type { OAuthBindState, TokenPayload } from '@/features/auth/auth.dto.js';
 import type { IUser } from '@/features/user/entities/User.js';
 import type { IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserController } from '@/features/user/user.controller.js';
+import { ErrorMiddleware } from '@/middleware/error.js';
 import { LoggerMiddleware } from '@/middleware/logger.js';
 
 
@@ -94,6 +95,9 @@ export async function createApp(db: Services) {
 	apiRouter.use('/user', createUserController(db));
 
 	app.use('/api/v1', apiRouter);
+
+	// Error handler
+	app.use(ErrorMiddleware);
 
 	return app;
 }
