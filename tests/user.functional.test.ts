@@ -34,14 +34,12 @@ describe('User API', () => {
     const res = await request(app)
       .get('/api/v1/user/me')
       .set('Cookie', `access_token=${accessToken}`);
-
     expect(parseInt(res.body.data.id)).toBe(validUser.id);
   });
 
   test('GET user me without token', async ({ app }) => {
     const res = await request(app)
       .get('/api/v1/user/me');
-
     expect(res.status).toBe(401);
   });
 });
