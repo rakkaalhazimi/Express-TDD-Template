@@ -37,7 +37,6 @@ export async function initORM(options?: Partial<Options>): Promise<Services> {
 
 export async function initTestORM() {
   const db = await initORM({
-    allowGlobalContext: true,  // for test only, to prevent using .fork() for EntityManager
     driver: SqliteDriver,
     dbName: ':memory:',
   });
