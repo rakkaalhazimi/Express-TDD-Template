@@ -1,3 +1,4 @@
+import type { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import jwt from 'jsonwebtoken';
 
@@ -33,4 +34,25 @@ export async function verifyAccessToken(token: string): Promise<TokenPayload> {
 		}
 		throw error;
 	}
+}
+
+
+export function getAccessTokenCookie(req: Request) {
+	if (!req.cookies.access_token) {
+		throw new AppError({
+			status: StatusCodes.UNAUTHORIZED,
+			message: `Access Token isn't found`,
+		});
+	}
+	return req.cookies.access_token;
+}
+
+
+export function setAccessTokenCookie(res: Response, token: string) {
+	res.cookie('access_token', token);
+}
+
+
+export function clearAccessTokenCookie(res: Response) {
+	res.clearCookie('access_token');
 }

@@ -9,7 +9,12 @@ import type {
 import { createAuthService } from './auth.service.js';
 import type { Services } from '@/db/db.js';
 import Env from '@/env-loader.js';
-import { verifyAccessToken } from '@/utils/auth-utils.js';
+import {
+	clearAccessTokenCookie,
+	getAccessTokenCookie,
+	setAccessTokenCookie,
+	verifyAccessToken,
+} from '@/utils/auth-utils.js';
 
 
 
@@ -22,7 +27,7 @@ export function createAuthController(db: Services) {
 		const { username, password } = req.body as UserLoginDto;
 		const user = await authService.login(username, password);
 		const accessToken = await authService.genereateUserToken(Number(user.id));
-		authService.setAccessTokenCookie(res, accessToken);
+		setAccessTokenCookie(res, accessToken);
 		return res.status(StatusCodes.OK).json({
 			message: 'Login success',
 			data: { accessToken },
@@ -42,13 +47,13 @@ export function createAuthController(db: Services) {
 
 	AuthController.get('/logout', async (req: Request, res: Response) => {
 		delete req.session.oauth;
-		authService.clearAccessTokenCookie(res);
+		clearAccessTokenCookie(res);
 		return res.redirect('/');
 	});
 
 
 	AuthController.post('/password/bind', async (req: Request, res: Response) => {
-		const accessToken = authService.getAccessTokenCookie(req);
+		const accessToken = getAccessTokenCookie(req);
 		const decoded = await verifyAccessToken(accessToken);
 		const { username, password, confirmPassword } = req.body as UserRegistrationDto;
 		const userAuth = await authService.bindPasswordAccount(
@@ -74,7 +79,7 @@ export function createAuthController(db: Services) {
 		const payload = await authService.authorizeGoogle(req, Env.GOOGLE_REDIRECT_URI!);
 		const userAuth = await authService.registerByGoogle(payload.sub, payload.email!);
 		const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
-		authService.setAccessTokenCookie(res, accessToken);
+		setAccessTokenCookie(res, accessToken);
 		return res.redirect('/');
 	});
 
@@ -106,7 +111,7 @@ export function createAuthController(db: Services) {
 
 
 	AuthController.post('/google/unbind', async (req: Request, res: Response) => {
-		const accessToken = authService.getAccessTokenCookie(req);
+		const accessToken = getAccessTokenCookie(req);
 		const decoded = await verifyAccessToken(accessToken);
 		const userAuth = await authService.unbindGoogleAccount(decoded.user_id);
 
@@ -127,7 +132,7 @@ export function createAuthController(db: Services) {
 		const payload = await authService.authorizeGithub(req, Env.GITHUB_REDIRECT_URI!);
 		const userAuth = await authService.registerByGithub(String(payload.id), payload.login);
 		const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
-		authService.setAccessTokenCookie(res, accessToken);
+		setAccessTokenCookie(res, accessToken);
 		return res.redirect('/');
 	});
 
@@ -163,7 +168,7 @@ export function createAuthController(db: Services) {
 
 
 	AuthController.post('/github/unbind', async (req: Request, res: Response) => {
-		const accessToken = authService.getAccessTokenCookie(req);
+		const accessToken = getAccessTokenCookie(req);
 		const decoded = await verifyAccessToken(accessToken);
 		const userAuth = await authService.unbindGithubAccount(decoded.user_id);
 
@@ -184,7 +189,7 @@ export function createAuthController(db: Services) {
 		const payload = await authService.authorizeDiscord(req, Env.DISCORD_REDIRECT_URI!);
 		const userAuth = await authService.registerByDiscord(String(payload.id), payload.username);
 		const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
-		authService.setAccessTokenCookie(res, accessToken);
+		setAccessTokenCookie(res, accessToken);
 		return res.redirect('/');
 	});
 
@@ -220,7 +225,7 @@ export function createAuthController(db: Services) {
 
 
 	AuthController.post('/discord/unbind', async (req: Request, res: Response) => {
-		const accessToken = authService.getAccessTokenCookie(req);
+		const accessToken = getAccessTokenCookie(req);
 		const decoded = await verifyAccessToken(accessToken);
 		const userAuth = await authService.unbindDiscordAccount(decoded.user_id);
 
@@ -241,7 +246,7 @@ export function createAuthController(db: Services) {
 		const payload = await authService.authorizeMicrosoft(req, Env.MICROSOFT_REDIRECT_URI!);
 		const userAuth = await authService.registerByMicrosoft(String(payload.id), payload.userPrincipalName);
 		const accessToken = await authService.genereateUserToken(Number(userAuth.user!.id));
-		authService.setAccessTokenCookie(res, accessToken);
+		setAccessTokenCookie(res, accessToken);
 		return res.redirect('/');
 	});
 
@@ -277,7 +282,7 @@ export function createAuthController(db: Services) {
 
 
 	AuthController.post('/microsoft/unbind', async (req: Request, res: Response) => {
-		const accessToken = authService.getAccessTokenCookie(req);
+		const accessToken = getAccessTokenCookie(req);
 		const decoded = await verifyAccessToken(accessToken);
 		const userAuth = await authService.unbindMicrosoftAccount(decoded.user_id);
 

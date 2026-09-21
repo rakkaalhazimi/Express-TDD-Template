@@ -16,7 +16,7 @@ import type {
 	MicrosoftUserPayload,
 	OAuthBindState,
 } from './auth.dto.js';
-import { createAccessToken, verifyAccessToken } from '@/utils/auth-utils.js';
+import { createAccessToken, getAccessTokenCookie, verifyAccessToken } from '@/utils/auth-utils.js';
 import { type IUser } from '@/features/user/entities/User.js';
 import { AuthProvider, type IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';
@@ -686,29 +686,10 @@ export class AuthService {
 	}
 
 
-	getAccessTokenCookie(req: Request) {
-		if (!req.cookies.access_token) {
-			throw new AppError({
-				status: StatusCodes.UNAUTHORIZED,
-				message: `Access Token isn't found`,
-			});
-		}
-		return req.cookies.access_token;
-	}
-
-	setAccessTokenCookie(res: Response, token: string) {
-		res.cookie('access_token', token);
-	}
-
-	clearAccessTokenCookie(res: Response) {
-		res.clearCookie('access_token');
-	}
-
-
 	async createOAuthState(req: Request): Promise<OAuthBindState> {
 		// const authHeader = req.headers['authorization'];
 		// const token = authHeader && authHeader.split(' ')[1];
-		const accessToken = this.getAccessTokenCookie(req);
+		const accessToken = getAccessTokenCookie(req);
 		const decoded = await verifyAccessToken(accessToken);
 		return {
 			state: randomUUID(),
