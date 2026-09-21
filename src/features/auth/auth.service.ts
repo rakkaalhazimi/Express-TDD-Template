@@ -16,7 +16,7 @@ import type {
 	MicrosoftUserPayload,
 	OAuthBindState,
 } from './auth.dto.js';
-import { createAccessToken, verifyAccessToken } from '@/utils/auth.js';
+import { createAccessToken, verifyAccessToken } from '@/utils/auth-utils.js';
 import { type IUser } from '@/features/user/entities/User.js';
 import { AuthProvider, type IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';

@@ -14,8 +14,8 @@ import type { OAuthBindState, TokenPayload } from '@/features/auth/auth.dto.js';
 import type { IUser } from '@/features/user/entities/User.js';
 import type { IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserController } from '@/features/user/user.controller.js';
-import { ErrorMiddleware } from '@/middleware/error.js';
-import { LoggerMiddleware } from '@/middleware/logger.js';
+import { ErrorMiddleware } from '@/middleware/error-middleware.js';
+import { LoggerMiddleware } from '@/middleware/logger-middleware.js';
 
 
 

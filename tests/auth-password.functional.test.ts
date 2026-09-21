@@ -4,7 +4,7 @@ import request from 'supertest';
 import { test } from "./auth.context.js";
 
 import { AuthProvider } from "@/features/user/entities/UserAuth.js";
-import { createAccessToken } from "@/utils/auth.js";
+import { createAccessToken } from "@/utils/auth-utils.js";
 
 
 

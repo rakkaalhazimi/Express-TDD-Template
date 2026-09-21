@@ -5,7 +5,7 @@ import { test } from "./auth.context.js";
 
 import { AuthService } from "@/features/auth/auth.service.js";
 import { AuthProvider } from "@/features/user/entities/UserAuth.js";
-import { verifyAccessToken } from "@/utils/auth.js";
+import { verifyAccessToken } from "@/utils/auth-utils.js";
 
 
 

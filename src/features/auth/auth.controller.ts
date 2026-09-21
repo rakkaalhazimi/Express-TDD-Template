@@ -9,7 +9,7 @@ import type {
 import { createAuthService } from './auth.service.js';
 import type { Services } from '@/db/db.js';
 import Env from '@/env-loader.js';
-import { verifyAccessToken } from '@/utils/auth.js';
+import { verifyAccessToken } from '@/utils/auth-utils.js';
 
 
 
