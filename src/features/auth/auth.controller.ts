@@ -10,10 +10,13 @@ import { createAuthService } from './auth.service.js';
 import type { Services } from '@/db/db.js';
 import Env from '@/env-loader.js';
 import {
+  JWTGuardMiddleware,
+  getDecodedFromJWTGuard,
+} from '@/middleware/jwt-guard-middleware.js';
+import {
   clearAccessTokenCookie,
   setAccessTokenCookie,
 } from '@/utils/auth-utils.js';
-import { JWTGuardMiddleware } from '@/middleware/jwt-guard-middleware.js';
 
 
 
@@ -52,9 +55,10 @@ export function createAuthController(db: Services) {
 
 
   AuthController.post('/password/bind', JWTGuardMiddleware, async (req: Request, res: Response) => {
+    const decoded = getDecodedFromJWTGuard(res);
     const { username, password, confirmPassword } = req.body as UserRegistrationDto;
     const userAuth = await authService.bindPasswordAccount(
-      res.locals.user.user_id,
+      decoded.user_id,
       username,
       password,
       confirmPassword,
@@ -82,7 +86,8 @@ export function createAuthController(db: Services) {
 
 
   AuthController.get('/google-bind', JWTGuardMiddleware, async (req: Request, res: Response) => {
-    req.session.oauth = authService.createOAuthState(res.locals.user.user_id);
+    const decoded = getDecodedFromJWTGuard(res);
+    req.session.oauth = authService.createOAuthState(decoded.user_id);
     const oauthUrl = authService.createGoogleOAuthUrl(
       Env.GOOGLE_BIND_REDIRECT_URI!,
       req.session.oauth.state,
@@ -108,7 +113,8 @@ export function createAuthController(db: Services) {
 
 
   AuthController.post('/google/unbind', JWTGuardMiddleware, async (_req: Request, res: Response) => {
-    const userAuth = await authService.unbindGoogleAccount(res.locals.user.user_id);
+    const decoded = getDecodedFromJWTGuard(res);
+    const userAuth = await authService.unbindGoogleAccount(decoded.user_id);
 
     return res.status(StatusCodes.OK).json({
       message: 'Unbind google auth success',
@@ -133,7 +139,8 @@ export function createAuthController(db: Services) {
 
 
   AuthController.get('/github-bind', JWTGuardMiddleware, async (req: Request, res: Response) => {
-    req.session.oauth = authService.createOAuthState(res.locals.user.user_id);
+    const decoded = getDecodedFromJWTGuard(res);
+    req.session.oauth = authService.createOAuthState(decoded.user_id);
     const oauthUrl = authService.createGithubOAuthUrl(
       Env.GITHUB_BIND_REDIRECT_URI!,
       req.session.oauth.state,
@@ -163,7 +170,8 @@ export function createAuthController(db: Services) {
 
 
   AuthController.post('/github/unbind', JWTGuardMiddleware, async (_req: Request, res: Response) => {
-    const userAuth = await authService.unbindGithubAccount(res.locals.user.user_id);
+    const decoded = getDecodedFromJWTGuard(res);
+    const userAuth = await authService.unbindGithubAccount(decoded.user_id);
 
     return res.status(StatusCodes.OK).json({
       message: 'Unbind github auth success',
@@ -188,7 +196,8 @@ export function createAuthController(db: Services) {
 
 
   AuthController.get('/discord-bind', JWTGuardMiddleware, async (req: Request, res: Response) => {
-    req.session.oauth = authService.createOAuthState(res.locals.user.user_id);
+    const decoded = getDecodedFromJWTGuard(res);
+    req.session.oauth = authService.createOAuthState(decoded.user_id);
     const oauthUrl = authService.createDiscordOAuthUrl(
       Env.DISCORD_BIND_REDIRECT_URI!,
       req.session.oauth.state,
@@ -218,7 +227,8 @@ export function createAuthController(db: Services) {
 
 
   AuthController.post('/discord/unbind', JWTGuardMiddleware, async (_req: Request, res: Response) => {
-    const userAuth = await authService.unbindDiscordAccount(res.locals.user.user_id);
+    const decoded = getDecodedFromJWTGuard(res);
+    const userAuth = await authService.unbindDiscordAccount(decoded.user_id);
 
     return res.status(StatusCodes.OK).json({
       message: 'Unbind discord auth success',
@@ -243,7 +253,8 @@ export function createAuthController(db: Services) {
 
 
   AuthController.get('/microsoft-bind', JWTGuardMiddleware, async (req: Request, res: Response) => {
-    req.session.oauth = authService.createOAuthState(res.locals.user.user_id);
+    const decoded = getDecodedFromJWTGuard(res);
+    req.session.oauth = authService.createOAuthState(decoded.user_id);
     const oauthUrl = await authService.createMicrosoftOAuthUrl(
       Env.MICROSOFT_BIND_REDIRECT_URI!,
       req.session.oauth.state,
@@ -273,7 +284,8 @@ export function createAuthController(db: Services) {
 
 
   AuthController.post('/microsoft/unbind', JWTGuardMiddleware, async (_req: Request, res: Response) => {
-    const userAuth = await authService.unbindMicrosoftAccount(res.locals.user.user_id);
+    const decoded = getDecodedFromJWTGuard(res);
+    const userAuth = await authService.unbindMicrosoftAccount(decoded.user_id);
 
     return res.status(StatusCodes.OK).json({
       message: 'Unbind microsoft auth success',
