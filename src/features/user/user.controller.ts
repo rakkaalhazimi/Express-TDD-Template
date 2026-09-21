@@ -7,17 +7,17 @@ import type { Services } from '@/db/db.js';
 
 
 export function createUserController(db: Services) {
-	const UserController = express.Router();
-	const userService = createUserService(db);
+  const UserController = express.Router();
+  const userService = createUserService(db);
 
 
-	UserController.post('/create', async (req: Request, res: Response) => {
-		const user = await userService.createUser(req.body);
-		res.status(StatusCodes.OK).send({
-			message: 'Create user success',
-			data: { username: user.username },
-		});
-	});
+  UserController.post('/create', async (req: Request, res: Response) => {
+    const user = await userService.createUser(req.body);
+    res.status(StatusCodes.OK).send({
+      message: 'Create user success',
+      data: { username: user.username },
+    });
+  });
 
-	return UserController;
+  return UserController;
 }

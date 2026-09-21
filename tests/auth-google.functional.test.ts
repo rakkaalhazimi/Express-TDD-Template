@@ -10,8 +10,8 @@ import { verifyAccessToken } from "@/utils/auth-utils.js";
 
 
 const googleLoginPayload = {
-	sub: 'google-user-123',
-	email: 'test@example.com',
+  sub: 'google-user-123',
+  email: 'test@example.com',
 };
 
 // Code snippet to mock the class library
@@ -23,249 +23,249 @@ const googleLoginPayload = {
 
 describe('Google Auth API - Page', () => {
 
-	test('GET google auth exists', async ({ app }) => {
-		const res = await request(app)
-			.get('/api/v1/auth/google')
-			.redirects(0);
-		expect(res.status).equal(302);
-	});
+  test('GET google auth exists', async ({ app }) => {
+    const res = await request(app)
+      .get('/api/v1/auth/google')
+      .redirects(0);
+    expect(res.status).equal(302);
+  });
 
 
-	test('GET google auth callback exists', async ({ app }) => {
-		const res = await request(app).get('/api/v1/auth/google/callback');
-		expect(res.status).not.equal(404);
-	});
+  test('GET google auth callback exists', async ({ app }) => {
+    const res = await request(app).get('/api/v1/auth/google/callback');
+    expect(res.status).not.equal(404);
+  });
 
 
-	test('GET google bind exists', async ({ app }) => {
-		const res = await request(app).get('/api/v1/auth/google-bind');
-		expect(res.status).not.equal(404);
-	});
+  test('GET google bind exists', async ({ app }) => {
+    const res = await request(app).get('/api/v1/auth/google-bind');
+    expect(res.status).not.equal(404);
+  });
 
 
-	test('GET google bind callback exists', async ({ app }) => {
-		const res = await request(app).get('/api/v1/auth/google/bind');
-		expect(res.status).not.equal(404);
-	});
+  test('GET google bind callback exists', async ({ app }) => {
+    const res = await request(app).get('/api/v1/auth/google/bind');
+    expect(res.status).not.equal(404);
+  });
 });
 
 
 
 describe('Google Auth API - Register', () => {
 
-	beforeAll(() => {
-		vi.spyOn(AuthService.prototype, 'authorizeGoogle')
-			.mockResolvedValue(googleLoginPayload);
-	});
+  beforeAll(() => {
+    vi.spyOn(AuthService.prototype, 'authorizeGoogle')
+      .mockResolvedValue(googleLoginPayload);
+  });
 
 
-	test.afterEach(async ({ clearDatabaseRow }) => {
-		await clearDatabaseRow();
-	});
+  test.afterEach(async ({ clearDatabaseRow }) => {
+    await clearDatabaseRow();
+  });
 
 
-	test('Register new user by Google', async ({ app, db }) => {
-		await request(app).get('/api/v1/auth/google/callback');
-		const newAuthUser = await db.userAuth.findOne({
-			providerUserId: googleLoginPayload.sub,
-			displayIdentifier: googleLoginPayload.email,
-		});
-		expect(newAuthUser?.providerUserId).equal(googleLoginPayload.sub);
-		expect(newAuthUser?.provider).equal(AuthProvider.GOOGLE);
-	});
+  test('Register new user by Google', async ({ app, db }) => {
+    await request(app).get('/api/v1/auth/google/callback');
+    const newAuthUser = await db.userAuth.findOne({
+      providerUserId: googleLoginPayload.sub,
+      displayIdentifier: googleLoginPayload.email,
+    });
+    expect(newAuthUser?.providerUserId).equal(googleLoginPayload.sub);
+    expect(newAuthUser?.provider).equal(AuthProvider.GOOGLE);
+  });
 
 
-	test('Register existing user by Google', async ({ app, db, authService }) => {
-		await authService.registerByGoogle(googleLoginPayload.sub, googleLoginPayload.email);
-		await request(app)
-			.get('/api/v1/auth/google/callback')
-			.set('Accept', 'application/json');
+  test('Register existing user by Google', async ({ app, db, authService }) => {
+    await authService.registerByGoogle(googleLoginPayload.sub, googleLoginPayload.email);
+    await request(app)
+      .get('/api/v1/auth/google/callback')
+      .set('Accept', 'application/json');
 
-		const userAuth = await db.userAuth.findOne({
-			providerUserId: googleLoginPayload.sub,
-			displayIdentifier: googleLoginPayload.email,
-		});
-		expect(userAuth?.providerUserId).equal(googleLoginPayload.sub);
-		expect(userAuth?.provider).equal(AuthProvider.GOOGLE);
-	});
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: googleLoginPayload.sub,
+      displayIdentifier: googleLoginPayload.email,
+    });
+    expect(userAuth?.providerUserId).equal(googleLoginPayload.sub);
+    expect(userAuth?.provider).equal(AuthProvider.GOOGLE);
+  });
 
 
-	test('JWT Token after Register/Login by Google', async ({ app, db, accessTokenCookie }) => {
-		const res = await request(app)
-			.get('/api/v1/auth/google/callback')
-			.set('Accept', 'application/json')
-			.redirects(0);
-		expect(res.status).equal(302);
+  test('JWT Token after Register/Login by Google', async ({ app, db, accessTokenCookie }) => {
+    const res = await request(app)
+      .get('/api/v1/auth/google/callback')
+      .set('Accept', 'application/json')
+      .redirects(0);
+    expect(res.status).equal(302);
 
-		const userAuth = await db.userAuth.findOne({
-			providerUserId: googleLoginPayload.sub,
-			displayIdentifier: googleLoginPayload.email,
-		});
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: googleLoginPayload.sub,
+      displayIdentifier: googleLoginPayload.email,
+    });
 
-		const accessToken = accessTokenCookie(res);
-		expect(accessToken).toBeTruthy();
+    const accessToken = accessTokenCookie(res);
+    expect(accessToken).toBeTruthy();
 
-		const token = await verifyAccessToken(accessToken!);
-		expect(token.user_id).toBeTruthy();
-		expect(token.user_id == Number(userAuth?.user?.id)).toBe(true);
-	});
+    const token = await verifyAccessToken(accessToken!);
+    expect(token.user_id).toBeTruthy();
+    expect(token.user_id == Number(userAuth?.user?.id)).toBe(true);
+  });
 });
 
 
 describe('Google Auth API - Bind', () => {
 
-	const validUser = {
-		username: "test",
-		password: "test",
-		confirmPassword: "test",
-	};
+  const validUser = {
+    username: "test",
+    password: "test",
+    confirmPassword: "test",
+  };
 
-	const oauthState = {
-		state: 'test',
-		userId: 0,
-	};
+  const oauthState = {
+    state: 'test',
+    userId: 0,
+  };
 
-	test.beforeAll(() => {
-		vi.spyOn(AuthService.prototype, 'verifyOAuthState')
-			.mockReturnValue(oauthState);
-		vi.spyOn(AuthService.prototype, 'authorizeGoogle')
-			.mockResolvedValue(googleLoginPayload);
-	});
-
-
-	test.beforeEach(async ({ authService }) => {
-		const user = await authService.register(
-			validUser.username,
-			validUser.password,
-			validUser.confirmPassword,
-		);
-		oauthState.userId = Number(user.id);
-	});
+  test.beforeAll(() => {
+    vi.spyOn(AuthService.prototype, 'verifyOAuthState')
+      .mockReturnValue(oauthState);
+    vi.spyOn(AuthService.prototype, 'authorizeGoogle')
+      .mockResolvedValue(googleLoginPayload);
+  });
 
 
-	test.afterEach(async ({ clearDatabaseRow }) => {
-		await clearDatabaseRow();
-	});
+  test.beforeEach(async ({ authService }) => {
+    const user = await authService.register(
+      validUser.username,
+      validUser.password,
+      validUser.confirmPassword,
+    );
+    oauthState.userId = Number(user.id);
+  });
 
 
-	test.afterAll(() => {
-		vi.clearAllMocks();
-	});
+  test.afterEach(async ({ clearDatabaseRow }) => {
+    await clearDatabaseRow();
+  });
 
 
-	test('Bind google account', async ({ app, db }) => {
-		const res = await request(app)
-			.get('/api/v1/auth/google/bind');
-
-		const userAuth = await db.userAuth.findOne({
-			providerUserId: googleLoginPayload.sub,
-			provider: AuthProvider.GOOGLE,
-		}, { populate: ['user'] });
-
-		expect(userAuth?.user?.username).toBe(validUser.username);
-		expect(res.status).equal(201);
-	});
+  test.afterAll(() => {
+    vi.clearAllMocks();
+  });
 
 
-	test('Bind google account if exist', async ({ app, db, authService }) => {
-		await authService.registerByGoogle(
-			googleLoginPayload.sub,
-			googleLoginPayload.email,
-		);
+  test('Bind google account', async ({ app, db }) => {
+    const res = await request(app)
+      .get('/api/v1/auth/google/bind');
 
-		const res = await request(app)
-			.get('/api/v1/auth/google/bind');
+    const userAuth = await db.userAuth.findOne({
+      providerUserId: googleLoginPayload.sub,
+      provider: AuthProvider.GOOGLE,
+    }, { populate: ['user'] });
 
-		const userAuth = await db.userAuth.find({
-			providerUserId: googleLoginPayload.sub,
-			provider: AuthProvider.GOOGLE,
-		});
-		expect(userAuth.length).toBeLessThan(2);
-		expect(res.status).equal(409);
-	});
+    expect(userAuth?.user?.username).toBe(validUser.username);
+    expect(res.status).equal(201);
+  });
+
+
+  test('Bind google account if exist', async ({ app, db, authService }) => {
+    await authService.registerByGoogle(
+      googleLoginPayload.sub,
+      googleLoginPayload.email,
+    );
+
+    const res = await request(app)
+      .get('/api/v1/auth/google/bind');
+
+    const userAuth = await db.userAuth.find({
+      providerUserId: googleLoginPayload.sub,
+      provider: AuthProvider.GOOGLE,
+    });
+    expect(userAuth.length).toBeLessThan(2);
+    expect(res.status).equal(409);
+  });
 });
 
 
 
 describe('Google Auth API - Unbind', () => {
 
-	const validUser = {
-		username: "test",
-		password: "test",
-		confirmPassword: "test",
-	};
+  const validUser = {
+    username: "test",
+    password: "test",
+    confirmPassword: "test",
+  };
 
-	test.afterEach(async ({ clearDatabaseRow }) => {
-		await clearDatabaseRow();
-	});
-
-
-	test('Unbind google account', async ({ app, db, authService }) => {
-		await authService.register(
-			validUser.username,
-			validUser.password,
-			validUser.confirmPassword,
-		);
-		const passwordAuth = await db.userAuth.findOne({
-			providerUserId: validUser.username,
-			provider: AuthProvider.PASSWORD,
-		}, { populate: ['user'] });
-		const userId = Number(passwordAuth?.user!.id);
-
-		await authService.bindGoogleAccount(
-			userId,
-			googleLoginPayload.sub,
-			googleLoginPayload.email,
-		);
-		const accessToken = await authService.genereateUserToken(userId);
-
-		const res = await request(app)
-			.post('/api/v1/auth/google/unbind')
-			.set('Cookie', `access_token=${accessToken}`);
-
-		const boundAuth = await db.userAuth.findOne({
-			providerUserId: googleLoginPayload.sub,
-			provider: AuthProvider.GOOGLE,
-		});
-		expect(boundAuth).toBeNull();
-		expect(res.status).equal(200);
-	});
+  test.afterEach(async ({ clearDatabaseRow }) => {
+    await clearDatabaseRow();
+  });
 
 
-	test('Unbind google account if not bound', async ({ app, db, authService }) => {
-		await authService.register(
-			validUser.username,
-			validUser.password,
-			validUser.confirmPassword,
-		);
-		const passwordAuth = await db.userAuth.findOne({
-			providerUserId: validUser.username,
-			provider: AuthProvider.PASSWORD,
-		}, { populate: ['user'] });
-		const userId = Number(passwordAuth?.user!.id);
-		const accessToken = await authService.genereateUserToken(userId);
+  test('Unbind google account', async ({ app, db, authService }) => {
+    await authService.register(
+      validUser.username,
+      validUser.password,
+      validUser.confirmPassword,
+    );
+    const passwordAuth = await db.userAuth.findOne({
+      providerUserId: validUser.username,
+      provider: AuthProvider.PASSWORD,
+    }, { populate: ['user'] });
+    const userId = Number(passwordAuth?.user!.id);
 
-		const res = await request(app)
-			.post('/api/v1/auth/google/unbind')
-			.set('Cookie', `access_token=${accessToken}`);
+    await authService.bindGoogleAccount(
+      userId,
+      googleLoginPayload.sub,
+      googleLoginPayload.email,
+    );
+    const accessToken = await authService.genereateUserToken(userId);
 
-		expect(res.status).equal(404);
-	});
+    const res = await request(app)
+      .post('/api/v1/auth/google/unbind')
+      .set('Cookie', `access_token=${accessToken}`);
+
+    const boundAuth = await db.userAuth.findOne({
+      providerUserId: googleLoginPayload.sub,
+      provider: AuthProvider.GOOGLE,
+    });
+    expect(boundAuth).toBeNull();
+    expect(res.status).equal(200);
+  });
+
+
+  test('Unbind google account if not bound', async ({ app, db, authService }) => {
+    await authService.register(
+      validUser.username,
+      validUser.password,
+      validUser.confirmPassword,
+    );
+    const passwordAuth = await db.userAuth.findOne({
+      providerUserId: validUser.username,
+      provider: AuthProvider.PASSWORD,
+    }, { populate: ['user'] });
+    const userId = Number(passwordAuth?.user!.id);
+    const accessToken = await authService.genereateUserToken(userId);
+
+    const res = await request(app)
+      .post('/api/v1/auth/google/unbind')
+      .set('Cookie', `access_token=${accessToken}`);
+
+    expect(res.status).equal(404);
+  });
 });
 
 
 
 describe('Google Auth API - Error', () => {
 
-	beforeAll(() => {
-		vi.spyOn(AuthService.prototype, 'authorizeGoogle')
-			.mockImplementation(async () => {
-				throw new TypeError('Made up error');
-			});
-	});
+  beforeAll(() => {
+    vi.spyOn(AuthService.prototype, 'authorizeGoogle')
+      .mockImplementation(async () => {
+        throw new TypeError('Made up error');
+      });
+  });
 
-	test('Error on authorize Google', async ({ app }) => {
-		const res = await request(app).get('/api/v1/auth/google/callback');
-		expect(res.status).equal(500);
-	});
+  test('Error on authorize Google', async ({ app }) => {
+    const res = await request(app).get('/api/v1/auth/google/callback');
+    expect(res.status).equal(500);
+  });
 });

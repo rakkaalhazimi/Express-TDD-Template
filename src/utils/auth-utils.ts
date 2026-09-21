@@ -10,49 +10,49 @@ import type { IUser } from '@/features/user/entities/User.js';
 
 
 export function createAccessToken(user: IUser) {
-	const payload: TokenPayload = { user_id: Number(user.id) };
-	const token = jwt.sign(payload, Env.SECRET!, { expiresIn: '1h' });
-	return token;
+  const payload: TokenPayload = { user_id: Number(user.id) };
+  const token = jwt.sign(payload, Env.SECRET!, { expiresIn: '1h' });
+  return token;
 }
 
 
 export async function verifyAccessToken(token: string): Promise<TokenPayload> {
-	try {
-		const decoded = jwt.verify(token, Env.SECRET!);
-		return decoded as TokenPayload;
-	} catch (error) {
-		if (
-			error instanceof jwt.TokenExpiredError
+  try {
+    const decoded = jwt.verify(token, Env.SECRET!);
+    return decoded as TokenPayload;
+  } catch (error) {
+    if (
+      error instanceof jwt.TokenExpiredError
 			|| error instanceof jwt.JsonWebTokenError
 			|| error instanceof jwt.NotBeforeError
-		) {
-			throw new AppError({
-				status: StatusCodes.UNAUTHORIZED,
-				message: error.message,
-				cause: error,
-			});
-		}
-		throw error;
-	}
+    ) {
+      throw new AppError({
+        status: StatusCodes.UNAUTHORIZED,
+        message: error.message,
+        cause: error,
+      });
+    }
+    throw error;
+  }
 }
 
 
 export function getAccessTokenCookie(req: Request) {
-	if (!req.cookies.access_token) {
-		throw new AppError({
-			status: StatusCodes.UNAUTHORIZED,
-			message: `Access Token isn't found`,
-		});
-	}
-	return req.cookies.access_token;
+  if (!req.cookies.access_token) {
+    throw new AppError({
+      status: StatusCodes.UNAUTHORIZED,
+      message: `Access Token isn't found`,
+    });
+  }
+  return req.cookies.access_token;
 }
 
 
 export function setAccessTokenCookie(res: Response, token: string) {
-	res.cookie('access_token', token);
+  res.cookie('access_token', token);
 }
 
 
 export function clearAccessTokenCookie(res: Response) {
-	res.clearCookie('access_token');
+  res.clearCookie('access_token');
 }
