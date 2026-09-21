@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { ConfidentialClientApplication } from '@azure/msal-node';
 import bcrypt from 'bcrypt';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import { StatusCodes } from 'http-status-codes';
 
@@ -16,7 +16,7 @@ import type {
   MicrosoftUserPayload,
   OAuthBindState,
 } from './auth.dto.js';
-import { createAccessToken, getAccessTokenCookie, verifyAccessToken } from '@/utils/auth-utils.js';
+import { createAccessToken } from '@/utils/auth-utils.js';
 import { type IUser } from '@/features/user/entities/User.js';
 import { AuthProvider, type IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';
@@ -686,14 +686,10 @@ export class AuthService {
   }
 
 
-  async createOAuthState(req: Request): Promise<OAuthBindState> {
-    // const authHeader = req.headers['authorization'];
-    // const token = authHeader && authHeader.split(' ')[1];
-    const accessToken = getAccessTokenCookie(req);
-    const decoded = await verifyAccessToken(accessToken);
+  createOAuthState(userId: number): OAuthBindState {
     return {
       state: randomUUID(),
-      userId: decoded.user_id,
+      userId,
     };
   }
 
