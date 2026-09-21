@@ -5,6 +5,7 @@ import { test } from "./auth.context.js";
 
 import { AuthService } from "@/features/auth/auth.service.js";
 import { AuthProvider } from "@/features/user/entities/UserAuth.js";
+import { verifyAccessToken } from "@/utils/auth.js";
 
 
 
@@ -89,7 +90,7 @@ describe('Google Auth API - Register', () => {
 	});
 
 
-	test('JWT Token after Register/Login by Google', async ({ app, db, authService, accessTokenCookie }) => {
+	test('JWT Token after Register/Login by Google', async ({ app, db, accessTokenCookie }) => {
 		const res = await request(app)
 			.get('/api/v1/auth/google/callback')
 			.set('Accept', 'application/json')
@@ -104,7 +105,7 @@ describe('Google Auth API - Register', () => {
 		const accessToken = accessTokenCookie(res);
 		expect(accessToken).toBeTruthy();
 
-		const token = await authService.verifyJWT(accessToken!);
+		const token = await verifyAccessToken(accessToken!);
 		expect(token.user_id).toBeTruthy();
 		expect(token.user_id == Number(userAuth?.user?.id)).toBe(true);
 	});

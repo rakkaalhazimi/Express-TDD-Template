@@ -9,6 +9,7 @@ import type {
 import { createAuthService } from './auth.service.js';
 import type { Services } from '@/db/db.js';
 import Env from '@/env-loader.js';
+import { verifyAccessToken } from '@/utils/auth.js';
 
 
 
@@ -48,7 +49,7 @@ export function createAuthController(db: Services) {
 
 	AuthController.post('/password/bind', async (req: Request, res: Response) => {
 		const accessToken = authService.getAccessTokenCookie(req);
-		const decoded = await authService.verifyJWT(accessToken);
+		const decoded = await verifyAccessToken(accessToken);
 		const { username, password, confirmPassword } = req.body as UserRegistrationDto;
 		const userAuth = await authService.bindPasswordAccount(
 			decoded.user_id,
@@ -106,7 +107,7 @@ export function createAuthController(db: Services) {
 
 	AuthController.post('/google/unbind', async (req: Request, res: Response) => {
 		const accessToken = authService.getAccessTokenCookie(req);
-		const decoded = await authService.verifyJWT(accessToken);
+		const decoded = await verifyAccessToken(accessToken);
 		const userAuth = await authService.unbindGoogleAccount(decoded.user_id);
 
 		return res.status(StatusCodes.OK).json({
@@ -163,7 +164,7 @@ export function createAuthController(db: Services) {
 
 	AuthController.post('/github/unbind', async (req: Request, res: Response) => {
 		const accessToken = authService.getAccessTokenCookie(req);
-		const decoded = await authService.verifyJWT(accessToken);
+		const decoded = await verifyAccessToken(accessToken);
 		const userAuth = await authService.unbindGithubAccount(decoded.user_id);
 
 		return res.status(StatusCodes.OK).json({
@@ -220,7 +221,7 @@ export function createAuthController(db: Services) {
 
 	AuthController.post('/discord/unbind', async (req: Request, res: Response) => {
 		const accessToken = authService.getAccessTokenCookie(req);
-		const decoded = await authService.verifyJWT(accessToken);
+		const decoded = await verifyAccessToken(accessToken);
 		const userAuth = await authService.unbindDiscordAccount(decoded.user_id);
 
 		return res.status(StatusCodes.OK).json({
@@ -277,7 +278,7 @@ export function createAuthController(db: Services) {
 
 	AuthController.post('/microsoft/unbind', async (req: Request, res: Response) => {
 		const accessToken = authService.getAccessTokenCookie(req);
-		const decoded = await authService.verifyJWT(accessToken);
+		const decoded = await verifyAccessToken(accessToken);
 		const userAuth = await authService.unbindMicrosoftAccount(decoded.user_id);
 
 		return res.status(StatusCodes.OK).json({

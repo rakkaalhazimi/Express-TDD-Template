@@ -5,7 +5,6 @@ import bcrypt from 'bcrypt';
 import type { Request, Response } from 'express';
 import { OAuth2Client } from 'google-auth-library';
 import { StatusCodes } from 'http-status-codes';
-import jwt from 'jsonwebtoken';
 
 import { type Services } from "@/db/db.js";
 import Env from '@/env-loader.js';
@@ -16,8 +15,8 @@ import type {
 	GoogleUserPayload,
 	MicrosoftUserPayload,
 	OAuthBindState,
-	TokenPayload,
 } from './auth.dto.js';
+import { createAccessToken, verifyAccessToken } from '@/utils/auth.js';
 import { type IUser } from '@/features/user/entities/User.js';
 import { AuthProvider, type IUserAuth } from '@/features/user/entities/UserAuth.js';
 import { createUserService, UserService } from '@/features/user/user.service.js';
@@ -674,34 +673,6 @@ export class AuthService {
 	}
 
 
-	createJWT(user: IUser) {
-		const payload: TokenPayload = { user_id: Number(user.id) };
-		const token = jwt.sign(payload, Env.SECRET!, { expiresIn: '1h' });
-		return token;
-	}
-
-
-	async verifyJWT(token: string): Promise<TokenPayload> {
-		try {
-			const decoded = jwt.verify(token, Env.SECRET!);
-			return decoded as TokenPayload;
-		} catch(error) {
-			if (
-				error instanceof jwt.TokenExpiredError
-				|| error instanceof jwt.JsonWebTokenError
-				|| error instanceof jwt.NotBeforeError
-			) {
-				throw new AppError({
-					status: StatusCodes.UNAUTHORIZED,
-					message: error.message,
-					cause: error,
-				});
-			}
-			throw error;
-		}
-	}
-
-
 	async genereateUserToken(id: number): Promise<string> {
 		const user = await this.db.user.findOne({ id });
 		if (!user) {
@@ -710,7 +681,7 @@ export class AuthService {
 				message: 'User not found',
 			});
 		}
-		const accessToken = this.createJWT(user);
+		const accessToken = createAccessToken(user);
 		return accessToken;
 	}
 
@@ -738,7 +709,7 @@ export class AuthService {
 		// const authHeader = req.headers['authorization'];
 		// const token = authHeader && authHeader.split(' ')[1];
 		const accessToken = this.getAccessTokenCookie(req);
-		const decoded = await this.verifyJWT(accessToken);
+		const decoded = await verifyAccessToken(accessToken);
 		return {
 			state: randomUUID(),
 			userId: decoded.user_id,

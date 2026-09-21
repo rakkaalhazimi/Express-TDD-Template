@@ -4,6 +4,7 @@ import request from 'supertest';
 import { test } from "./auth.context.js";
 
 import { AuthProvider } from "@/features/user/entities/UserAuth.js";
+import { createAccessToken } from "@/utils/auth.js";
 
 
 
@@ -141,9 +142,9 @@ describe('Password Auth API - Bind', () => {
 	});
 
 
-	test('Bind password account', async ({ app, db, authService }) => {
+	test('Bind password account', async ({ app, db }) => {
 		const user = await db.user.findOne({ id: newUserGoogle.id });
-		const accessToken = authService.createJWT(user!);
+		const accessToken = createAccessToken(user!);
 		const res = await request(app)
 			.post('/api/v1/auth/password/bind')
 			.set('Cookie', `access_token=${accessToken}`)
@@ -166,7 +167,7 @@ describe('Password Auth API - Bind', () => {
 			validUser.password,
 			validUser.confirmPassword,
 		);
-		const accessToken = authService.createJWT(userAuth.user!);
+		const accessToken = createAccessToken(userAuth.user!);
 
 		const res = await request(app)
 			.post('/api/v1/auth/password/bind')
@@ -224,7 +225,7 @@ describe('Password Auth API - Bind', () => {
 		const hackerUserAuth = await authService.registerByGoogle(
 			newUserHacker.uniqueId, newUserHacker.displayIdentifier);
 		newUserHacker.id = Number(hackerUserAuth.user!.id);
-		const accessToken = authService.createJWT(hackerUserAuth.user!);
+		const accessToken = createAccessToken(hackerUserAuth.user!);
 
 		const res = await request(app)
 			.post('/api/v1/auth/password/bind')
