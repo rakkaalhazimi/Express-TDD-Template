@@ -36,7 +36,7 @@ export async function createApp(db: Services) {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      sameSite: true,
+      sameSite: 'lax', // allows cookies on top-level GET navigations (OAuth redirects)
     },
   }));
   app.use(expressContext.default());
