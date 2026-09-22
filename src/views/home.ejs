@@ -187,7 +187,6 @@
               <% if (provider.id === 'password') { %>
                 <button class="btn" type="button" onclick="document.getElementById('password-bind').classList.add('open')">Bind with password</button>
                 <div class="bind-form" id="password-bind">
-                  <input type="hidden" id="bind-user-id" value="<%= user.id %>">
                   <input type="text" id="bind-username" placeholder="New username" autocomplete="username">
                   <input type="password" id="bind-password" placeholder="New password" autocomplete="new-password">
                   <input type="password" id="bind-confirm" placeholder="Confirm password" autocomplete="new-password">
@@ -272,7 +271,6 @@
   <% } else { %>
     <script>
       async function bindPassword() {
-        const id = document.getElementById('bind-user-id').value;
         const username = document.getElementById('bind-username').value;
         const password = document.getElementById('bind-password').value;
         const confirmPassword = document.getElementById('bind-confirm').value;
@@ -280,7 +278,7 @@
         const res = await fetch('/api/v1/auth/password/bind', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, username, password, confirmPassword }),
+          body: JSON.stringify({ username, password, confirmPassword }),
         });
         const data = await res.json();
 
