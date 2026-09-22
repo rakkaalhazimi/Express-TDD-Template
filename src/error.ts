@@ -15,7 +15,6 @@ interface AppErrorOptions {
 
 export class AppError extends Error {
   public status: number;
-  public serverMessage: string;
   public cause?: unknown;
   public readonly errorId: string;
 
