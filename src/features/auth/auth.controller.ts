@@ -100,7 +100,7 @@ export function createAuthController(db: Services) {
     const { state } = req.query;
     const payload = await authService.authorizeGoogle(req, Env.GOOGLE_BIND_REDIRECT_URI!);
     const authState = authService.verifyOAuthState(req, state as string);
-    const userAuth = await authService.bindGoogleAccount(authState.userId, payload.sub, payload.email!);
+    const userAuth = await authService.bindGoogleAccount(authState.userId, payload.sub, payload.name!);
 
     return res.status(StatusCodes.CREATED).send({
       message: 'Bind google auth success',
@@ -270,7 +270,7 @@ export function createAuthController(db: Services) {
     const userAuth = await authService.bindMicrosoftAccount(
       authState.userId,
       String(payload.id),
-      payload.userPrincipalName,
+      payload.displayName,
     );
 
     return res.status(StatusCodes.CREATED).send({

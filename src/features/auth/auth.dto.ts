@@ -21,6 +21,7 @@ export interface DiscordUserPayload {
 export interface MicrosoftUserPayload {
   id: string;
   userPrincipalName: string;
+  displayName: string;
 };
 
 export interface OAuthBindState {

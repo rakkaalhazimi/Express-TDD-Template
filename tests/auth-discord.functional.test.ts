@@ -3,13 +3,14 @@ import request from 'supertest';
 
 import { test } from "./auth.context.js";
 
+import type { DiscordUserPayload } from "@/features/auth/auth.dto.js";
 import { AuthService } from "@/features/auth/auth.service.js";
 import { AuthProvider, UserAuthSchema } from "@/features/user/entities/UserAuth.js";
 import { verifyAccessToken } from "@/utils/auth-utils.js";
 
 
 
-const discordLoginPayload = {
+const discordLoginPayload: DiscordUserPayload = {
   id: '123456789',
   username: 'expressjstdd',
 };

@@ -3,15 +3,17 @@ import request from 'supertest';
 
 import { test } from "./auth.context.js";
 
+import type { MicrosoftUserPayload } from "@/features/auth/auth.dto.js";
 import { AuthService } from "@/features/auth/auth.service.js";
 import { AuthProvider, UserAuthSchema } from "@/features/user/entities/UserAuth.js";
 import { verifyAccessToken } from "@/utils/auth-utils.js";
 
 
 
-const microsoftLoginPayload = {
+const microsoftLoginPayload: MicrosoftUserPayload = {
   id: 'microsoft-user-123',
   userPrincipalName: 'user@example.com',
+  displayName: 'Test Microsoft TDD',
 };
 
 describe('Microsoft Auth API - Page', () => {

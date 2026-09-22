@@ -3,13 +3,14 @@ import request from 'supertest';
 
 import { test } from "./auth.context.js";
 
+import type { GithubUserPayload } from "@/features/auth/auth.dto.js";
 import { AuthService } from "@/features/auth/auth.service.js";
 import { AuthProvider } from "@/features/user/entities/UserAuth.js";
 import { verifyAccessToken } from "@/utils/auth-utils.js";
 
 
 
-const githubLoginPayload = {
+const githubLoginPayload: GithubUserPayload = {
   id: '123456789',
   login: 'expressjstdd',
 };

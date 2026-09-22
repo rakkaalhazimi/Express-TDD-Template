@@ -3,15 +3,17 @@ import request from 'supertest';
 
 import { test } from "./auth.context.js";
 
+import type { GoogleUserPayload } from "@/features/auth/auth.dto.js";
 import { AuthService } from "@/features/auth/auth.service.js";
 import { AuthProvider } from "@/features/user/entities/UserAuth.js";
 import { verifyAccessToken } from "@/utils/auth-utils.js";
 
 
 
-const googleLoginPayload = {
+const googleLoginPayload: GoogleUserPayload = {
   sub: 'google-user-123',
   email: 'test@example.com',
+  name: 'Test Google TDD',
 };
 
 // Code snippet to mock the class library
